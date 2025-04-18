@@ -34,8 +34,18 @@ vibe-coder/
   - 非功能需求（如 sla、安全性）
   - 使用者故事（可選）
 
-### 2. 架構設計與任務分解 (`plan.md`)
-- 與 llm 討論技術架構與開發方向（前後端分離、資料流設計等）。
+### 2. 撰寫 Technical Specifications Document (`tsd.md`)
+- 與 llm 共編，目的是讓開發者 5 分鐘內快速上手。
+- 建議內容：
+  - 專案簡介
+  - 架構設計（可附圖或文字說明）
+  - 資料夾結構與用途（如 `tree -L 2`）
+  - 開發環境設定與啟動流程
+  - 常見開發任務與指令範例
+
+### 3. 架構設計與任務分解 (`plan.md`)
+- 與 llm 討論技術架構與開發方向（前後端分離、資料流設計等）
+- create checkboxes for "Next Steps"
 - 請 llm 將 prd 拆解為具體的開發任務（ticket）：
   - 第一張為建立 skeleton（初始化專案）
   - 其餘每張為單一功能
@@ -47,15 +57,6 @@ vibe-coder/
   files: ["README.md", "src/", "Dockerfile"]
   est_hours: 2
 ```
-
-### 3. 撰寫 Technical Specifications Document (`tsd.md`)
-- 與 llm 共編，目的是讓開發者 5 分鐘內快速上手。
-- 建議內容：
-  - 專案簡介
-  - 架構設計（可附圖或文字說明）
-  - 資料夾結構與用途（如 `tree -L 2`）
-  - 開發環境設定與啟動流程
-  - 常見開發任務與指令範例
 
 ## 📦 常見 prompt snippets
 
