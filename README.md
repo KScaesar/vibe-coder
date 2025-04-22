@@ -18,7 +18,7 @@ vibe-coder/
 ├── plan.md
 ├── tsd.md
 ├── README.md
-└── snippets/
+└── .prompts/
     ├── prd.md
     ├── plan.md
     └── tsd.md
