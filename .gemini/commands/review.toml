@@ -1,0 +1,39 @@
+description = "Generates a Git commit message based on staged changes."
+
+prompt = """
+## Task
+
+Please generate a Conventional Commit message based on the following git diff:
+```diff
+!{git diff --staged}
+```
+
+Design Thinking for Commit Messages:
+- DDD(Domain-Driven Design): Focus on the domain or bounded context (e.g., user, order, payment).
+- Clean Architecture: Specify the layer affected (e.g., biz, use-case, db, api, cli).
+
+## Messages Format
+
+```
+<type>(<scope>?): <description>
+
+<body>
+
+<footer>?
+```
+
+Rules:
+- type: feat, fix, docs, style, refactor, perf, test, build, ci, chore ... etc
+- description: brief change summary, ≤70 chars, imperative mood
+- body: detailed explanation
+
+Optional:
+- scope: specifies affected module and provides additional contextual information
+- footer: includes BREAKING CHANGE or issue references (e.g. Fixes #issue or Refs)
+
+Example:
+- feat(user/biz): add user validation service
+- fix(order/use-case): resolve order payment processing issue
+- refactor(payment/db): improve payment processing logic
+
+"""
