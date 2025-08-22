@@ -27,6 +27,8 @@ use serena MCP
     - The nature of the change (e.g., refactor, new feature, bug fix, optimization)
     - Identify potential risks, security threats, and other negative factors, and provide suggestions for improvement.
     - Suggestions on how the change could be better aligned with SOLID and pure function principles
+    - Review whether the code introduces unnecessary abstraction or premature optimization.
+    - Flag cases where the complexity outweighs the actual business need, and suggest simpler alternatives that improve readability and maintainability.
 
 4. When evaluating performance, consider the system scenario:
     - For OLTP workloads, focus on handling high volumes of concurrent requests efficiently (e.g., locks, db indexes, CPU loading, I/O loading, query latency).
