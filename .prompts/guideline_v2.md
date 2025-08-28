@@ -80,12 +80,12 @@ ProjectLayout 是一個樹狀結構
     │   ├── pubsub/            # [dir]  訊息佇列 (Message Queue)
     │   ├── cronjob/           # [dir]  排程任務
     │   ├── cli/               # [dir]  命令列工具
-    │   └── {db,mq,redis}      # [file] 連線設定與負責與外部互動的物件
+    │   └── {db,mq,redis}      # [file] 連線設定 and 負責與外部互動的物件
     ├── app/                   # [dir]  商業價值 核心程式
     │   ├── {feature}_svc      # [file] 業務流程的協調
     │   ├── {feature}_dto      # [file] 數據的契約
     │   ├── {feature}_biz      # [file] 業務規則的化身 DDD Domain Model, Domain Function
-    │   ├── {feature}_view     # [file] 專為顯示而生 CQRS Read Model
+    │   ├── {feature}_view     # [file] 專為顯示而生 CQS Read Model
     │   └── {feature}_event    # [file] 重要事件的宣告
     ├── utility/               # [dir]  與業務無關、技術層面通用
     ├── {init}                 # [file] Global 通用物件, Logger
@@ -118,16 +118,24 @@ ProjectLayout 是一個樹狀結構
 - Convert Data Method
   - `Request.ToInput()` : When 需要支援多種傳輸協議 json, xml, template 等
   - `Input.ToParam()` : When write, 驗證資料 or 基礎型別無法滿足狀態改變需求
-  - `Input.ToOption()`: When read, 驗證資料 or 基礎型別無法滿足查詢需求
+  - `Input.ToOption()`: When Query, 驗證資料 or 基礎型別無法滿足查詢需求
   - `Schema.ToBiz()` : When lock table, db 與 biz 結構不同
-  - `Schema.ToOutput()` : When read, db 與 output 結構不同
-  - `Schema.ToView()` : When read, db 與 view 結構不同
+  - `Schema.ToOutput()` : When Query, db 與 output 結構不同
+  - `Schema.ToView()` : When Query, db 與 view 結構不同
   - `Biz.ToOutput()` : When write, biz 與 output 結構不同
-  - `View.ToOutput()` : When read, view 與 output 結構不同
+  - `View.ToOutput()` : When Query, view 與 output 結構不同
 
 - Convert Data Function
   - `ToResponseFrom(output)` : When 需要支援多種傳輸協議 json, xml, template 等
   - `ToSchemaFrom(biz)` : When write, biz 與 db 結構不同
+
+## 資料結構 允許/禁止 規則
+
+- `Input`/`Output`：必要的資料結構。  
+- `Request`/`Response`：僅當符合定義中情境才生成，禁止過早建立。  
+- `Param`/`Option`：僅當需求明確需要額外驗證或複雜情境時才生成，禁止過早建立。  
+- `View`：僅 CQS 查詢情境需要，禁止過早建立。  
+- `Schema`：簡單情境下，允許使用 ORM tool 在 Domain Model，禁止過早建立 `Schema`。  
 
 ## 元件定義與職責 (Component Definitions & Responsibilities)
 
@@ -138,7 +146,6 @@ ProjectLayout 是一個樹狀結構
     1. 是一個介面 (Interface)。
     2. 其方法簽名只依賴 `Input` 和 `Output` ，以及 Go 的 `context` 或其他基礎類型。
     3. 這是 `adapters` 層唯一被允許調用的入口點。
-
 
 * `UseCase`
   - file: `app/{feature}_svc`
@@ -175,6 +182,7 @@ ProjectLayout 是一個樹狀結構
     1. 專為特定的查詢情境或顯示需求
     2. 根據某些條件或政策，決定如何呈現資料 or 是否顯示資料
     3. 使用 CQRS 的概念, 分離 Write Model 和 Read Model
+    4. 簡單查詢情境, 使用 `Output` 即可, 不需要引入 `View`
 
 ---
 
@@ -189,8 +197,9 @@ ProjectLayout 是一個樹狀結構
   - scenario:
     1. 專門給 Domain Model 寫入操作的參數
     2. 當 `Input` 的欄位與 Domain Model (`_biz`) 的建構或方法所需參數**有顯著差異**
-    3. 需要**額外處理/驗證**才能轉換成 Domain Model 所需的狀態時，才引入 `Param` 作為中介。
+    3. 需要額外處理/驗證才能轉換成 Domain Model 所需的狀態時，才引入 `Param` 作為中介。
     4. 初期應避免使用。
+    5. 狀態改變情境，非 Query 開頭的 `Input` 應該用 `ToParam`, 而不是 `ToOption`
 
 * `Option`
   - file: `app/{feature}_dto`
@@ -198,6 +207,7 @@ ProjectLayout 是一個樹狀結構
   - scenario:
     1. 複雜讀取情境才需要從 `Input` to `Option`
     2. 初期應避免使用。
+    3. 讀取情境，Query 開頭的 `Input` 應該用 `ToOption`, 而不是 `ToParam`
 
 * `Event`
   - file: `app/{feature}_event`
