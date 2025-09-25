@@ -1,5 +1,9 @@
 # vibe-coder
 
+```
+cp -r ~/vibe-coder/prompts $(pwd)/prompts
+```
+
 AI 協作開發起手式框架，與任意 LLM 模型（如 gemini, chatgpt, claude 等）結合，使用對話驅動專案設計與開發。  
 包含常見的 prompt snippets，能快速啟動新專案並進行高效開發。  
 

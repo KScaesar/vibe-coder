@@ -211,7 +211,7 @@ ProjectLayout 是一個樹狀結構
 
 * `Event`
   - file: `app/{feature}_event`
-  - constraint: 過去式命名，代表已發生的業務事實
+  - constraint: 過去式命名，代表已發生的業務事實，`<DomainObject><ActionPastTense>Event`
   - scenario:
     1. 通過 EventBus 告訴外界，讓系統的其他部分能對此做出反應
 
