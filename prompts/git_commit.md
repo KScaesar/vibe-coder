@@ -1,19 +1,18 @@
 # Git Commit Message
 
-description:  
+## Task
 
-指導 LLM 產出符合 Conventional Commits 格式，並結合 DDD (Domain-Driven Design) 與 Clean Architecture 概念的 Git commit message
+Generates a Git commit message base on community conventional commits.
 
-## Prompt Reference
+The commit message must be combining DDD (Domain-Driven Design), Clean Architecture of a commit message, you would typically highlight the impacted domain, architecture layer.
 
-https://www.conventionalcommits.org/en/v1.0.0/
+First, list 5 optional draft commit messages.
+Then provide vary detailed body for every option only if the developer requests detail flag.
 
----
+Keep asking the developer whether they are satisfied with the generated commit message.
+If the developer disagrees, generate next process, and repeat this process until the developer agrees.
 
-## Prompt
-
-Must be combining DDD (Domain-Driven Design), Clean Architecture of a commit message, 
-you would typically highlight the impacted domain, architecture layer. 
+## Guideline
 
 Design Thinking Approach:
 - DDD: Focus on the domain or bounded context (e.g., user, order, payment).
@@ -32,7 +31,7 @@ Design Thinking Approach:
 Rules:
 - type: feat, fix, docs, style, refactor, perf, test, build, ci, chore ... etc
 - description: brief change summary, ≤60 chars, imperative mood
-- body: detailed explanation
+- body: detailed explanation, present the information in a bulleted (or list) format.
 
 Optional:
 - scope: specifies affected module and provides additional contextual information
@@ -43,3 +42,8 @@ Optional:
 - feat(user/biz): add user validation service
 - fix(order/use-case): resolve order payment processing issue
 - refactor(payment/db): improve payment processing logic
+
+## Constraints
+
+- 開發者確定 commit message 之後, 不要再執行任何指令, 等待開發者行動
+- 不要有任何 markdown 粗體或斜線等 highlight 格式

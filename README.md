@@ -15,3 +15,9 @@ AI 協作開發起手式框架，與任意 LLM 模型（如 gemini, chatgpt, cla
 ![Vibe Coding 語意生成歷程.png](https://github.com/user-attachments/assets/1881a3f7-2f57-485d-b11c-c063cde114c7)
 
 [Vibe Coding 語意生成歷程](https://www.facebook.com/story.php?story_fbid=9165193186923472&id=100002986462539&rdid=crwcwju4gEKPXxAj#)
+
+## create git commit message
+
+```
+gemini --yolo -p "/commit detail=true"
+```
