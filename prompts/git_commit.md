@@ -1,25 +1,26 @@
-# Git Commit Message
+# Git Commit Message Generator
 
 ## Task
+Generate a Git commit message based on community conventional commit standards, explicitly integrating both DDD (Domain-Driven Design) and Clean Architecture principles. For each message:
+- Highlight the impacted domain or bounded context (e.g., user, order, payment).
+- Identify the specific architecture layer affected (e.g., biz, use-case, db, api, cli).
 
-Generates a Git commit message base on community conventional commits.
+### Workflow
+1. Generate and list 3 distinct draft commit message options.
+2. If the developer requests the detail flag, provide for each option a detailed body, presenting the rationale and changes in bulleted or list form.
+3. Prompt the developer to indicate satisfaction with the generated commit message options.
+    - If the developer is unsatisfied, repeat the process and present new options until satisfaction is confirmed.
+4. Once the developer confirms their chosen commit message, stop and await further instructions. Do not execute any further actions.
 
-The commit message must be combining DDD (Domain-Driven Design), Clean Architecture of a commit message, you would typically highlight the impacted domain, architecture layer.
+After generating messages or detailed bodies, perform a short validation—ensure all required DDD and Clean Architecture elements are present and that formatting matches the specified template.
 
-First, list 3 optional draft commit messages.
-Then provide vary detailed body for every option only if the developer requests detail flag.
+## Message Thinking Approach
 
-Keep asking the developer whether they are satisfied with the generated commit message.
-If the developer disagrees, generate next process, and repeat this process until the developer agrees.
+- DDD: Clearly identify the affected domain or bounded context (e.g., user, order, payment).
 
-## Guideline
+- Clean Architecture: Specify the impacted architecture layer(s) (e.g., biz, use-case, db, api, cli).
 
-Design Thinking Approach:
-- DDD: Focus on the domain or bounded context (e.g., user, order, payment).
-- Clean Architecture: Specify the layer affected (e.g., biz, use-case, db, api, cli).
-
-## Format
-
+## Commit Message Format
 ```
 <type>(<scope>?): <description>
 
@@ -27,23 +28,17 @@ Design Thinking Approach:
 
 <footer>?
 ```
+- **Type:** feat, fix, docs, style, refactor, perf, test, build, ci, chore, etc.
+- **Description:** Concise summary of changes (≤60 characters, imperative mood)
+- **Body (optional):** Detailed, bulleted or list-style explanation (include only with detail flag)
+- **Scope (optional):** Affected module and contextual details
+- **Footer (optional):** Notes such as BREAKING CHANGE or issue references (e.g., Fixes #issue)
 
-Rules:
-- type: feat, fix, docs, style, refactor, perf, test, build, ci, chore ... etc
-- description: brief change summary, ≤60 chars, imperative mood
-- body: detailed explanation, present the information in a bulleted (or list) format.
-
-Optional:
-- scope: specifies affected module and provides additional contextual information
-- footer: includes BREAKING CHANGE or issue references (e.g. Fixes #issue or Refs)
-
-## Example
-
+## Examples
 - feat(user/biz): add user validation service
 - fix(order/use-case): resolve order payment processing issue
 - refactor(payment/db): improve payment processing logic
 
 ## Constraints
-
-- 開發者確定 commit message 之後, 不要再執行任何指令, 等待開發者行動
-- 不要有任何 markdown 粗體或斜線等 highlight 格式
+- After developer confirmation, do not execute further commands. Await developer action.
+- Do not use markdown bold, italics, or similar highlight formatting.
