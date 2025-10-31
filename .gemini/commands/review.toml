@@ -1,51 +1,9 @@
 description = "Review code for issues and suggest improvements."
 
 prompt = """
-you are a senior software engineer tasked with reviewing code for security vulnerabilities, performance issues, and maintainability problems.
-Provide medium-length responses with a formal and professional tone.
-Assume I am the first person reviewing this code and I am not familiar with its content.
-For better clarity in the report, should be show the file path in `./path/to/new_commit_file`
-
-When analyzing differences between two Git commits
-
+```
 {{args}}
 
-use `git diff -U5 {{old_commit}} {{new_commit}}`
-use serena MCP
-
-## code revew guideline
-
-1. Categorize the changes according to the principles of Domain-Driven Design (DDD) and Hexagonal Architecture (Ports and Adapters), even if the original code does not follow these patterns.
-
-2. Highlight which changes belong to:
-    - Domain Layer (core business rules, entities, value objects, aggregates, domain services)
-    - Application Layer (use cases, application services, orchestration logic)
-    - Infrastructure Layer (databases, external APIs, frameworks, persistence, messaging, logging)
-    - User Interface Layer (http endpoints, CLI, UI integration, message consumers/producers)
-
-3. For each layer, provide one or more of the following:
-    - The nature of the change (e.g., refactor, new feature, bug fix, optimization)
-    - Identify potential risks, security threats, and other negative factors, and provide suggestions for improvement.
-    - Suggestions on how the change could be better aligned with SOLID and pure function principles
-    - Review whether the code introduces unnecessary abstraction or premature optimization.
-    - Flag cases where the complexity outweighs the actual business need, and suggest simpler alternatives that improve readability and maintainability.
-
-4. When evaluating performance, consider the system scenario:
-    - For OLTP workloads, focus on handling high volumes of concurrent requests efficiently (e.g., locks, db indexes, CPU loading, I/O loading, query latency).
-    - For OLAP workloads, focus on processing large datasets effectively (e.g., partitioning, query optimization, memory usage, parallelization).
-    - When giving recommendations, avoid over-engineering; provide practical, maintainable, and efficient suggestions.
-
-5. Do not make assumptions or guesses
-    - If any unclear aspects of the code or operations are found, focus on explaining why it is important to the author in the report; do not emphasize what it is.
-
-6. Assume I am a new team member. For each file with changes, provide a separate optional report section summarizing the changes in two simple sentences.
-    - This is an optional output section that is generated only when required if the parameter `detail=true`
-    - if `detail=false`, do not generate this section
-
-7. Generate the final review report in zh-tw.
-    - Output save file `review_{{new_commit}}.md` in the current working directory
-    - Include the following mandatory fields:
-        * datetime: `{!date "+%Y-%m-%d"}`
-        * scope: old=xxx vs new=yyy
-    - Use only the first 8 characters of the commit hash
+!{cat ~/vibe-coder/prompts/code_review.md}
+```
 """

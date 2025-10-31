@@ -6,7 +6,7 @@ Generates a Git commit message base on community conventional commits.
 
 The commit message must be combining DDD (Domain-Driven Design), Clean Architecture of a commit message, you would typically highlight the impacted domain, architecture layer.
 
-First, list 5 optional draft commit messages.
+First, list 3 optional draft commit messages.
 Then provide vary detailed body for every option only if the developer requests detail flag.
 
 Keep asking the developer whether they are satisfied with the generated commit message.
