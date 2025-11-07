@@ -1,27 +1,8 @@
 {
-  "general": {
-    "checkpointing": {
-      "enabled": true
-    },
-    "preferredEditor": "vscode"
-  },
-  "tools": {
-    "exclude": [
-      "run_shell_command(rm)"
-    ]
-  },
-  "mcp": {
-    "excluded": [
-      "basic-memory"
-    ]
+  "ide": {
+    "enabled": true
   },
   "mcpServers": {
-    "chrome-devtools": {
-      "command": "npx",
-      "args": [
-        "chrome-devtools-mcp@latest"
-      ]
-    },
     "playwright": {
       "command": "npx",
       "args": [
@@ -51,15 +32,32 @@
       ]
     },
     "serena": {
-      "timeout": 5000,
+      "timeout": 10000,
       "command": "uvx",
       "args": [
         "--from",
         "git+https://github.com/oraios/serena",
-        "serena-mcp-server"
+        "serena",
+        "start-mcp-server"
       ],
       "excludeTools": []
     }
+  },
+  "general": {
+    "checkpointing": {
+      "enabled": true
+    },
+    "preferredEditor": "vscode"
+  },
+  "tools": {
+    "exclude": [
+      "run_shell_command(rm)"
+    ]
+  },
+  "mcp": {
+    "excluded": [
+      "basic-memory"
+    ]
   },
   "security": {
     "auth": {
