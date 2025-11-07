@@ -49,7 +49,7 @@ Attempt a first pass autonomously unless missing critical info; stop and ask for
 The final review should be written in Traditional Chinese (zh-tw).
 - Output must be saved as `review_{{new_commit}}.md` in the current working directory.
 - The report starts with metadata in the following order:
-    * datetime: `{date "+%Y-%m-%d %H:%M %z"}`. If shell access is unavailable, generate a valid date string.
+    * datetime: use shell `date "+%Y-%m-%d %H:%M %z"`. If shell access is unavailable, generate a valid date string.
     * scope: showing the first 8 characters from both old and new commit hashes (e.g., `old=12ab34cd vs new=56ef78gh`).
 - Following metadata, provide grouped summaries by architectural layers, each with a `##` heading (e.g., `## Domain Layer`, `## Application Layer`). Use bullet points or tables as needed, accompanied by analysis paragraphs.
 - If `detail=true`, add file-specific change summaries under `## File Change Summaries` at the end.
