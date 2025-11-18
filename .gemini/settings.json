@@ -3,6 +3,13 @@
     "enabled": true
   },
   "mcpServers": {
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
     "playwright": {
       "command": "npx",
       "args": [
@@ -15,15 +22,7 @@
         "markitdown-mcp"
       ]
     },
-    "basic-memory": {
-      "command": "uvx",
-      "args": [
-        "basic-memory",
-        "mcp"
-      ]
-    },
     "context7": {
-      "trust": true,
       "timeout": 1000,
       "command": "npx",
       "args": [
@@ -56,7 +55,7 @@
   },
   "mcp": {
     "excluded": [
-      "basic-memory"
+      "markitdown"
     ]
   },
   "security": {
