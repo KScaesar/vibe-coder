@@ -23,15 +23,16 @@
       ]
     },
     "context7": {
-      "timeout": 1000,
       "command": "npx",
       "args": [
         "-y",
-        "@upstash/context7-mcp"
+        "@upstash/context7-mcp",
+        "--api-key",
+        "YOUR_API_KEY"
       ]
     },
     "serena": {
-      "timeout": 10000,
+      "timeout": 5000,
       "command": "uvx",
       "args": [
         "--from",
@@ -55,7 +56,8 @@
   },
   "mcp": {
     "excluded": [
-      "markitdown"
+      "markitdown",
+      "playwright"
     ]
   },
   "security": {

@@ -1,6 +1,7 @@
 {
-  "mcpServers": {
+  "servers": {
     "sequential-thinking": {
+      "type": "stdio",
       "command": "npx",
       "args": [
         "-y",
@@ -8,27 +9,25 @@
       ]
     },
     "context7": {
-      "timeout": 1000,
-      "context7": {
-        "command": "npx",
-        "args": [
-          "-y",
-          "@upstash/context7-mcp",
-          "--api-key",
-          "YOUR_API_KEY"
-        ]
-      }
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp",
+        "--api-key",
+        "YOUR_API_KEY"
+      ]
     },
     "serena": {
-      "timeout": 5000,
+      "type": "stdio",
       "command": "uvx",
       "args": [
         "--from",
         "git+https://github.com/oraios/serena",
         "serena",
         "start-mcp-server"
-      ],
-      "excludeTools": []
+      ]
     }
-  }
+  },
+  "inputs": []
 }
