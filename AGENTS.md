@@ -5,6 +5,32 @@
 - Context7: "external truth source"
 - Serena: "internal truth source"
 
+## Python 使用規則
+
+- 所有 Python 程式碼的撰寫、執行與依賴管理，一律使用 uv。
+- 不得直接使用 pip、poetry、conda、或系統 python 進行安裝或執行。
+- Python 指令一律透過 `uv run` 執行。
+
+### Toolchain Execution Rule (mise)
+
+在 AI agent / 非互動 shell 環境中，禁止依賴自動環境切換。
+
+所有語言指令必須透過 `mise exec` 執行。
+
+標準格式：
+```
+mise exec -- <tool> <command...>
+```
+
+範例（Go 測試）：
+```
+mise exec -- go test ./...
+```
+
+規則：
+* 禁止直接執行 `go / node / python`
+* 禁止使用 activate / source / 自動切換
+
 ## Code Generation and Library Usage
 
 When performing any of the following tasks:
