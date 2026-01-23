@@ -1,0 +1,163 @@
+---
+name: bun-uptrace
+description: Bun is a SQL-first database client for Go. This skill covers the comprehensive guide, querying, models, migrations, and PostgreSQL specific features.
+---
+
+# Bun-Uptrace Skill
+
+Bun is a sql-first database client for go. this skill covers the comprehensive guide, querying, models, migrations, and postgresql specific features., generated from official documentation.
+
+## When to Use This Skill
+
+This skill should be triggered when:
+- Working with bun-uptrace
+- Asking about bun-uptrace features or APIs
+- Implementing bun-uptrace solutions
+- Debugging bun-uptrace code
+- Learning bun-uptrace best practices
+
+## Quick Reference
+
+### Common Patterns
+
+**Pattern 1:** # PostgreSQL data typestimestamptz vs timestampJSONBArraysUUIDSee also# timestamptz vs timestampTLDR You should prefer using timestamptz over times...
+
+```
+timestamptz
+```
+
+**Pattern 2:** Let's use the following table as an example:
+
+```
+CREATE TABLE test (
+  t1 timestamptz,
+  t2 timestamp
+);
+```
+
+**Pattern 3:** # Logging queries# bundebugFor quick debugging, you can print executed queries to stdout
+
+```
+bundebug
+```
+
+**Pattern 4:** Example:
+
+```
+db := bun.NewDB(sqldb, dialect)
+
+logger, err := zap.NewProduction()
+db.AddQueryHook(bunzap.NewQueryHook(bunzap.QueryHookOptions{
+    Logger:       logger,
+    SlowDuration: 200 * time.Millisecond, // Omit to log all operations as debug
+}))
+```
+
+**Pattern 5:** Golang Where PostgreSQL MySQLBasicsQueryBuilderWHERE INWherePKWHERE VALUESGrouping# BasicsYou can use arbitrary unsafe expressions in Where:q = q
+
+```
+Where
+```
+
+**Pattern 6:** # Writing complex parameterized queriesA parameterized query is a query that is built dynamically based on incoming request params
+
+```
+type ArticleFilter struct {
+	CategoryID int64
+	Search	   string
+	Page	   int
+}
+```
+
+### Example Code Patterns
+
+**Example 1** (go):
+```go
+package migrations
+
+import (
+	"github.com/uptrace/bun/migrate"
+)
+
+// A collection of migrations.
+var Migrations = migrate.NewMigrations()
+```
+
+**Example 2** (sql):
+```sql
+-- transaction 1
+UPDATE test WHERE id IN (1, 2);
+
+-- transaction 2
+UPDATE test WHERE id IN (2, 1);
+```
+
+**Example 3** (sql):
+```sql
+-- transaction 1
+UPDATE test WHERE id IN (1, 2);
+
+-- transaction 2
+UPDATE test WHERE id IN (1, 2);
+```
+
+**Example 4** (bash):
+```bash
+max_connections = <4-8 * number_of_cpus>
+```
+
+**Example 5** (bash):
+```bash
+shared_buffers = <20-40% of RAM>
+```
+
+## Reference Files
+
+This skill includes comprehensive documentation in `references/`:
+
+- **advanced.md** - Advanced documentation
+- **essentials.md** - Essentials documentation
+- **getting_started.md** - Getting Started documentation
+- **other.md** - Other documentation
+- **postgres.md** - Postgres documentation
+
+Use `view` to read specific reference files when detailed information is needed.
+
+## Working with This Skill
+
+### For Beginners
+Start with the getting_started or tutorials reference files for foundational concepts.
+
+### For Specific Features
+Use the appropriate category reference file (api, guides, etc.) for detailed information.
+
+### For Code Examples
+The quick reference section above contains common patterns extracted from the official docs.
+
+## Resources
+
+### references/
+Organized documentation extracted from official sources. These files contain:
+- Detailed explanations
+- Code examples with language annotations
+- Links to original documentation
+- Table of contents for quick navigation
+
+### scripts/
+Add helper scripts here for common automation tasks.
+
+### assets/
+Add templates, boilerplate, or example projects here.
+
+## Notes
+
+- This skill was automatically generated from official documentation
+- Reference files preserve the structure and examples from source docs
+- Code examples include language detection for better syntax highlighting
+- Quick reference patterns are extracted from common usage examples in the docs
+
+## Updating
+
+To refresh this skill with updated documentation:
+1. Re-run the scraper with the same configuration
+2. The skill will be rebuilt with the latest information
