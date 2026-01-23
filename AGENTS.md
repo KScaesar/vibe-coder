@@ -10,9 +10,14 @@
 
 在 AI agent / 非互動 shell 環境中，mise 無法藉由 `cd` 目錄 Hook 自動環境切換。
 
-當每次開啟新的 Shell 環境，在運行任務之前，絕對要執行以下指令 **一次** 為了讓 mise 管理工具版本。
-```
-eval "$(mise env)"
+執行前置檢查：
+1. 首先確認當前 project 是否存在 `mise.toml` ...等等 mise 相關文件。
+2. **僅在上述檔案存在時**，為了讓 mise 在非互動式環境生效且避免重複執行，執行環境切換指令。
+3. 若專案無 `mise` 相關檔案，則直接執行任務指令，無需執行環境切換指令。
+
+```bash
+[ "$MISE_FOR_AI" = "1" ] || { eval "$(mise env)" && export MISE_FOR_AI=1; }
+<執行任務指令>
 ```
 
 ## Code Generation and Library Usage
