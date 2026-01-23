@@ -1,13 +1,9 @@
 description = "Generates a Git commit message based on staged changes."
 
 prompt = """
-using following prompt:
+{{args}}
+
 ```
 !{cat ~/vibe-coder/prompts/git_commit.md}
-```
-
-codebase diff:
-```diff
-!{git diff -U5 --staged}
 ```
 """

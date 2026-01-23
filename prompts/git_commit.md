@@ -18,16 +18,17 @@ Generate a Git commit message based on community conventional commit standards, 
 
 ## Workflow
 
-1. **Parse Flags:** applying the logic defined in "Flag Logic & Defaults".
-2. **Generate Options:** List 3 distinct draft commit message options.
-    * **If scope is false:** Format must be `<type>: <description>`
-    * **If scope is true:**
-        * **DDD:** Highlight impacted Bounded Context or module (e.g., user, order, payment).
-        * **Clean Arch:** Identify impacted layer (e.g., biz, db, api, workflow, gateway, mq).
-    * **If body is true:** Append a bulleted list of changes and rationale.
-3. **Confirmation:** Prompt the developer to indicate satisfaction.
-    * If unsatisfied, repeat with new options.
-4. **Stop:** Await further instructions after confirmation.
+1. Codebase Diff: !{git --no-pager diff -U5 --staged}
+2. Parse Flags: applying the logic defined in "Flag Logic & Defaults".
+3. Generate Options: List 3 distinct draft commit message options.
+  * If scope is false: Format must be `<type>: <description>`
+  * If scope is true:
+    * DDD: Highlight impacted Bounded Context or module (e.g., user, order, payment).
+    * Clean Arch: Identify impacted layer (e.g., biz, db, api, workflow, gateway, mq).
+  * If body is true: Append a bulleted list of changes and rationale.
+4. Confirmation: Prompt the developer to indicate satisfaction.
+  * If unsatisfied, repeat with new options.
+5. Stop: Await further instructions after confirmation.
 
 ## Commit Message Format
 
@@ -46,7 +47,7 @@ Detailed Rules:
     * **Case FALSE:** You **MUST NOT** output parentheses or scope text.
         * Correct: `feat: add user password validation`
         * Incorrect: `feat(user/biz): add user password validation`
-    * **Case TRUE:** 
+    * **Case TRUE:**
         * Format must be `<type>(<context>/<layer>): <description>`
         * Vertical division (bounded context or module): Always required (e.g., user, order, payment)
         * Horizontal division (technical layer): Optional, **most cases don't need this**. Only add when the code architecture has clear technical layering (e.g., biz, db, api, workflow). **If unsure what layer to use, omit it.**
