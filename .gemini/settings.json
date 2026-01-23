@@ -50,7 +50,15 @@
     "preferredEditor": "vscode"
   },
   "tools": {
+    "allowed": [
+      "run_shell_command(git *)",
+      "run_shell_command(cat *)",
+      "run_shell_command(ls *)",
+      "run_shell_command(grep *)",
+      "run_shell_command(echo *)"
+    ],
     "exclude": [
+      "run_shell_command(git commit *)",
       "run_shell_command(rm)"
     ]
   },
