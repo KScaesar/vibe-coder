@@ -1,37 +1,24 @@
 # AGENTS.md
 
-## Tools
-
-- Context7: "external truth source"
-- Serena: "internal truth source"
-
 ## Python 使用規則
 
 - 所有 Python 程式碼的撰寫、執行與依賴管理，一律使用 uv。
 - 不得直接使用 pip、poetry、conda、或系統 python 進行安裝或執行。
 - Python 指令一律透過 `uv run` 執行。
 
-### Toolchain Execution Rule (mise)
+### Shell Command Line Execution Rule
 
-在 AI agent / 非互動 shell 環境中，禁止依賴自動環境切換。
+在 AI agent / 非互動 shell 環境中，mise 無法藉由 `cd` 目錄 Hook 自動環境切換。
 
-所有語言指令必須透過 `mise exec` 執行。
-
-標準格式：
+當每次開啟新的 Shell 環境，在運行任務之前，絕對要執行以下指令 **一次** 為了讓 mise 管理工具版本。
 ```
-mise exec -- <tool> <command...>
+eval "$(mise env)"
 ```
-
-範例（Go 測試）：
-```
-mise exec -- go test ./...
-```
-
-規則：
-* 禁止直接執行 `go / node / python`
-* 禁止使用 activate / source / 自動切換
 
 ## Code Generation and Library Usage
+
+- Context7: "external truth source"
+- Serena: "internal truth source"
 
 When performing any of the following tasks:
 - code generation
@@ -53,6 +40,9 @@ Constraints:
 - Do not silently assume default versions or behaviors.
 
 ## Codebase Search and Exploration
+
+- Context7: "external truth source"
+- Serena: "internal truth source"
 
 Before modifying or reasoning about existing code, the agent MUST:
 
