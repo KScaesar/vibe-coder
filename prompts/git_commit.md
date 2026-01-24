@@ -1,65 +1,84 @@
+
 # Git Commit Message Generator
 
-## Task
+This skill analyzes staged changes and generates high-quality commit message drafts following the **[Conventional Commits v1.0.0](https://www.conventionalcommits.org/en/v1.0.0/)** specification.
 
-Generate a Git commit message based on community conventional commit standards, explicitly integrating both DDD (Domain-Driven Design) and Clean Architecture principles.
-
-## Flag Logic & Defaults
-
-**Analyze the user's input for the following flags before generating messages:**
-
-1. **Scope Flag (`scope`)**
-    * **Default:** `false` (Do not include scope).
-    * **Trigger:** If the user's input contains the word "scope" (or related terms like "add scope", "with scope"), set this flag to `true`.
-
-2. **Body Flag (`body`)**
-    * **Default:** `false` (Do not include body).
-    * **Trigger:** If the user's input contains the word "body" (or related terms like "detailed", "explanation"), set this flag to `true`.
+**CRITICAL**: This skill is a **TEXT GENERATOR**. It must **NEVER** execute `git add`, `git commit`, `git push`, or modify git history.
 
 ## Workflow
 
-1. Codebase Diff: !{git --no-pager diff -U5 --staged}
-2. Parse Flags: applying the logic defined in "Flag Logic & Defaults".
-3. Generate Options: List 3 distinct draft commit message options.
-  * If scope is false: Format must be `<type>: <description>`
-  * If scope is true:
-    * DDD: Highlight impacted Bounded Context or module (e.g., user, order, payment).
-    * Clean Arch: Identify impacted layer (e.g., biz, db, api, workflow, gateway, mq).
-  * If body is true: Append a bulleted list of changes and rationale.
-4. Confirmation: Prompt the developer to indicate satisfaction.
-  * If unsatisfied, repeat with new options.
-5. Stop: Await further instructions after confirmation.
+1.  **Analyze Staged Changes**
+    *   Command: !{git --no-pager diff -U5 --staged}
+    *   If no output/changes: Inform user that no files are staged and **STOP**. DO NOT run `git add`.
 
-## Commit Message Format
+2.  **Analyze Intent & Flags**
+    *   Determine `scope` and `body` flags based on user input.
+    *   **Scope Flag**: Default `false`. Set `true` ONLY if user explicitly asks (e.g., "add scope", "with scope").
+    *   **Body Flag**: Default `false`. Set `true` ONLY if user explicitly asks (e.g., "detailed", "add body").
+    *   **Breaking**: Detect if changes introduce breaking changes (SemVer MAJOR).
 
+3.  **Generate Draft Options**
+    *   Create 3 distinct options following [Commit Rules](#commit-rules).
+    *   **Option 1**: Concise & direct.
+    *   **Option 2**: Alternative focus/phrasing.
+    *   **Option 3**: Different angle.
+
+4.  **Present & HALT**
+    *   Output the options in code blocks.
+    *   **STOP**. Do not ask "Shall I commit?".
+    *   Wait for the user to manually run the commit command.
+
+## Commit Rules (Conventional Commits v1.0.0)
+
+### Format Structure
+```text
+type(scope?): description
+
+[optional body]
+
+[optional footer(s)]
 ```
-<type>(<scope>?): <description>
 
-<body>?
+### 1. Header (First Line)
 
-<footer>?
-```
+The header line MUST follow this pattern: `type(scope): description` or `type(scope)!: description`.
 
-Detailed Rules:
+*   **Type** (Required)
+    *   `feat`: New feature (SemVer MINOR)
+    *   `fix`: Bug fix (SemVer PATCH)
+    *   `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`
+*   **Scope** (Optional)
+    *   **Condition**: Include ONLY if `Scope Flag` is `true`. Otherwise, MUST be omitted.
+    *   **Format**: Enclose in parentheses: `feat(parser):`. OMIT parentheses if scope is empty.
+    *   **DDD/Clean Arch Logic** (When `Scope Flag` is true):
+        *   **Autonomy**: You MUST autonomously infer these from file paths/content.
+        *   **Context (Business/DDD)**: REQUIRED. The business domain (e.g., `user`, `order`).
+        *   **Layer (Technical/Clean Arch)**: OPTIONAL. The technical layer (e.g., `api`, `domain`, `infra`).
+        *   **Format**: `(<context>)` or `(<context>/<layer>)`
+        *   **Examples**:
+            *   Context only: `feat(user): add profile`
+            *   Context + Layer: `feat(user/infra): add repo`
+*   **Breaking Indicator** (Optional)
+    *   Append `!` after type/scope for SemVer MAJOR changes
+    *   Example: `feat!: remove legacy api` or `fix(core)!: drop support for node 12`
+*   **Description** (Required)
+    *   Concise summary
+    *   Use imperative mood ("add" NOT "added")
+    *   Lowercase first letter
+    *   No trailing period
 
-* type: feat, fix, docs, style, refactor, perf, test, build, ci, chore.
-* scope (Controlled by Flag):
-    * **Case FALSE:** You **MUST NOT** output parentheses or scope text.
-        * Correct: `feat: add user password validation`
-        * Incorrect: `feat(user/biz): add user password validation`
-    * **Case TRUE:**
-        * Format must be `<type>(<context>/<layer>): <description>`
-        * Vertical division (bounded context or module): Always required (e.g., user, order, payment)
-        * Horizontal division (technical layer): Optional, **most cases don't need this**. Only add when the code architecture has clear technical layering (e.g., biz, db, api, workflow). **If unsure what layer to use, omit it.**
-        * Format examples:
-            * With layer: `feat(user/biz): add validation`
-            * Without layer: `feat(user): add profile feature`
-* body (Controlled by Flag):
-    * **Case FALSE:** Omit entirely.
-    * **Case TRUE:** Provide bullet points.
-* footer (Optional): Include for breaking changes or issue tracking if context permits (e.g., BREAKING CHANGE: ... or Fixes #123).
+### 2. Body (Optional)
+*   Separate from header with a blank line.
+*   **Condition**: Include ONLY if `Body Flag` is `true`. Otherwise, MUST be omitted.
+*   Focus on **why** the change was made.
 
-## Constraints
+### 3. Footer (Optional)
+*   Separate from body with a blank line.
+*   **Breaking Changes**: Start with `BREAKING CHANGE: <description>`.
+*   **Issues**: `Fixes #123`, `Closes #456`.
 
-* Do not use markdown bold (`**`), italics (`*`), or code blocks for the commit headers.
-* Strictly follow the Flag Logic.
+## Constraints (NON-NEGOTIABLE)
+
+1.  **NO AUTO-EXECUTION**: You are forbidden from running `git add` or `git commit`. Draft text ONLY.
+2.  **Strict Adherence**: Follow v1.0.0 spec strictly.
+3.  **STOP AFTER DRAFTING**: Show options, then stop.
