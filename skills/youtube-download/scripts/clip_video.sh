@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 if [ "$#" -lt 3 ]; then
     echo "Usage: $0 <input_video> <start_time> <end_time> [output_name]"
@@ -10,7 +10,7 @@ fi
 INPUT="$1"
 START="$2"
 END="$3"
-OUTPUT="$4"
+OUTPUT="${4:-}"
 
 if [ ! -f "$INPUT" ]; then
     echo "Error: Input file '$INPUT' not found."
