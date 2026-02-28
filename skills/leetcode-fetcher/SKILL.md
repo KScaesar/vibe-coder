@@ -1,6 +1,6 @@
 ---
 name: leetcode-fetcher
-description: 當使用者提供題目連結、題目識別名稱，或直接以純文字描述題目時，必須自行取得並解析題目內容，減少使用者手動複製貼上題目敘述；若可自動解析則以解析結果為準，否則直接以使用者提供的文字描述作為題目來源，再進行後續分析與分類。可搭配 algo-interview-prep 技能進行解題引導。
+description: 當使用者提供題目連結、題目識別名稱，或直接以純文字描述題目時，必須自行取得並解析題目內容，減少使用者手動複製貼上題目敘述；若可自動解析則以解析結果為準，否則直接以使用者提供的文字描述作為題目來源，再進行後續分析與分類。可搭配 algo-interview-prep 技能進行解題引導。本技能的核心任務是「自動化環境建立與測試案例準備」，Agent 應僅限於建立正確的檔案目錄與測試代碼，**嚴禁在此階段自動撰寫解題逻辑**。
 ---
 
 # LeetCode 題目抓取器
@@ -9,15 +9,16 @@ description: 當使用者提供題目連結、題目識別名稱，或直接以�
 
 依 URL 來源選擇對應腳本（將 `<skill-path>` 替換為本技能的絕對路徑）：
 
-| 來源 | 指令 |
-|------|------|
+| 來源           | 指令                                                          |
+| -------------- | ------------------------------------------------------------- |
 | `leetcode.com` | `uv run <skill-path>/scripts/fetch_leetcode.py <url-or-slug>` |
-| `neetcode.io` | `uv run <skill-path>/scripts/fetch_neetcode.py <url>` |
-| 其他 / 未知 | `uv run <skill-path>/scripts/fetch_generic.py <url>` |
+| `neetcode.io`  | `uv run <skill-path>/scripts/fetch_neetcode.py <url>`         |
+| 其他 / 未知    | `uv run <skill-path>/scripts/fetch_generic.py <url>`          |
 
 - **LeetCode / NeetCode**：腳本輸出 `=== LEETCODE_FILE_CONTENT_START/END ===` 之間的完整 Python 基礎結構，直接作為檔案基底。
-- **其他來源**：腳本僅輸出純文字，Agent 須自行組裝完整 Python 檔案。
+- **其他來源 / 純文字描述**：若使用者直接提供題目文字而無 URL，Agent 應略過執行腳本，改由 AI 自行組裝完整 Python 檔案內容（包含 Docstring 描述與解決方案類別）。
 - 若動態頁面抓取失敗，改用內建 `web_fetch` 或 `playwright` 技能。
+- **重要原則**：Agent 在此階段應保持 `Solution` 類別內的方法為 `pass` 或維持腳本輸出的原始狀態。**絕對不要擅自寫入有效解法**。
 
 ---
 
@@ -50,15 +51,16 @@ description: 當使用者提供題目連結、題目識別名稱，或直接以�
 
 **檔名規則：**
 
-| 情境 | 格式 | 範例 |
-|------|------|------|
-| LeetCode | `{五碼ID}._{Title_Case}.py` | `00001._Two_Sum.py` |
+| 情境           | 格式                                     | 範例                               |
+| -------------- | ---------------------------------------- | ---------------------------------- |
+| LeetCode       | `{五碼ID}._{Title_Case}.py`              | `00001._Two_Sum.py`                |
 | Weekly Contest | `Contest{期數}_Q{第N題}_{Title_Case}.py` | `Contest491_Q1_Count_Subarrays.py` |
-| 其他 | `00000._{Title_Case}.py` | `00000._Target_Sum.py` |
+| 其他           | `00000._{Title_Case}.py`                 | `00000._Target_Sum.py`             |
 
 特殊符號以底線替換，並清除多餘底線。
 
 **檔案結構：** 腳本輸出的基礎結構（Docstring + Solution class）＋ 手動補充的測試區塊：
+
 ```python
 def main():
     solution = Solution()

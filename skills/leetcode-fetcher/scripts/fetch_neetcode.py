@@ -79,6 +79,8 @@ def main():
     url = sys.argv[1]
     print(f"🌐 Fetching NeetCode URL: {url} ...", file=sys.stderr)
 
+    markdown_desc = fetch_and_parse(url)
+
     # 組裝成與 fetch_leetcode.py 一致的輸出格式
     lines = []
     lines.append("=== LEETCODE_FILE_CONTENT_START ===")
@@ -96,9 +98,26 @@ def main():
         lines.append(markdown_desc)
     lines.append('"""\n')
     lines.append("from typing import List, Optional, Dict, Tuple\n")
+
+    # Attempt to infer a camelCase method name from the URL slug
+    # NeetCode URLs: /problems/<slug>/question?... -> we need <slug>, not "question"
+    # e.g. "kth-largest-element-in-an-array" -> "kthLargestElementInAnArray"
+    try:
+        path = url.rstrip("/").split("?")[0]   # strip query string
+        segments = [s for s in path.split("/") if s]  # non-empty path parts
+        # Find "problems" and grab the segment right after it
+        if "problems" in segments:
+            slug = segments[segments.index("problems") + 1]
+        else:
+            slug = segments[-1]
+        parts = slug.split("-")
+        method_name = parts[0] + "".join(w.capitalize() for w in parts[1:])
+    except Exception:
+        method_name = "solve"
+
     lines.append("class Solution:")
-    lines.append("    # TODO: Provide function signature here")
-    lines.append("    def solve(self):")
+    lines.append(f"    # TODO: Replace parameters with the actual signature for `{method_name}`")
+    lines.append(f"    def {method_name}(self):")
     lines.append("        pass\n")
 
     lines.append(

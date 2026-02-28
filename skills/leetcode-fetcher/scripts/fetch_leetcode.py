@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = []
+# ///
 """
-fetch_problem.py — 從 LeetCode URL 或 slug 抓取題目詳細資訊（不需要登入）
+fetch_leetcode.py — 從 LeetCode URL 或 slug 抓取題目詳細資訊（不需要登入）
 
 Usage:
-    uv run fetch_problem.py <leetcode-url-or-slug>
+    uv run fetch_leetcode.py <leetcode-url-or-slug>
 """
 
 import html as html_module
