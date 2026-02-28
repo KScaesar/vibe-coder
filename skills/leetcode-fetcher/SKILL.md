@@ -1,44 +1,86 @@
 ---
 name: leetcode-fetcher
-description: 從 LeetCode 題目 URL 或 title slug 自動抓取並解析題目內容，包含題目描述、難度、Tags、提示（Hints）與相關題目列表。當使用者提供 LeetCode 題目連結（例如 https://leetcode.com/problems/two-sum/）或 slug（例如 two-sum）時使用此技能，以避免使用者手動複製貼上題目內容。本技能會呼叫 LeetCode 公開的 GraphQL API（不需登入），取得格式化後的 Markdown 題目資訊，供後續演算法分析、面試準備使用（可搭配 algo-interview-prep 技能）。
+description: 當使用者提供題目連結、題目識別名稱，或直接以純文字描述題目時，必須自行取得並解析題目內容，減少使用者手動複製貼上題目敘述；若可自動解析則以解析結果為準，否則直接以使用者提供的文字描述作為題目來源，再進行後續分析與分類。可搭配 algo-interview-prep 技能進行解題引導。
 ---
 
-# LeetCode 題目抓取器 (LeetCode Problem Fetcher)
+# LeetCode 題目抓取器
 
-## 工作流程
+## Step 1：抓取題目
 
-當使用者提供 LeetCode URL 或 slug 時：
+依 URL 來源選擇對應腳本（將 `<skill-path>` 替換為本技能的絕對路徑）：
 
-### 1. 執行抓取腳本
+| 來源 | 指令 |
+|------|------|
+| `leetcode.com` | `uv run <skill-path>/scripts/fetch_leetcode.py <url-or-slug>` |
+| `neetcode.io` | `uv run <skill-path>/scripts/fetch_neetcode.py <url>` |
+| 其他 / 未知 | `uv run <skill-path>/scripts/fetch_generic.py <url>` |
 
-使用隨附的 `scripts/fetch_problem.py` 腳本抓取題目資訊：
+- **LeetCode / NeetCode**：腳本輸出 `=== LEETCODE_FILE_CONTENT_START/END ===` 之間的完整 Python 基礎結構，直接作為檔案基底。
+- **其他來源**：腳本僅輸出純文字，Agent 須自行組裝完整 Python 檔案。
+- 若動態頁面抓取失敗，改用內建 `web_fetch` 或 `playwright` 技能。
 
-```bash
-uv run <absolute-path-to-skill>/scripts/fetch_problem.py <url-or-slug>
+---
+
+## Step 2：分類題目
+
+閱讀題目描述，依**核心解題邏輯**（非 Tags 關鍵字）歸類至以下其中一類：
+
+- Arrays & Hashing
+- Two Pointers
+- Sliding Window
+- Stack: 解法依賴 LIFO 處理配對、近期狀態或巢狀結構時才歸此類
+- Binary Search
+- Linked List
+- Trees
+- Heap / Priority Queue
+- Backtracking
+- Tries
+- Graphs
+- Advanced Graphs
+- 1-D Dynamic Programming
+- 2-D Dynamic Programming
+- Greedy
+- Intervals: 核心在於處理區間關係（合併、重疊、掃描）才歸此類
+- Math & Geometry
+- Bit Manipulation
+
+---
+
+## Step 3：建立檔案
+
+**檔名規則：**
+
+| 情境 | 格式 | 範例 |
+|------|------|------|
+| LeetCode | `{五碼ID}._{Title_Case}.py` | `00001._Two_Sum.py` |
+| Weekly Contest | `Contest{期數}_Q{第N題}_{Title_Case}.py` | `Contest491_Q1_Count_Subarrays.py` |
+| 其他 | `00000._{Title_Case}.py` | `00000._Target_Sum.py` |
+
+特殊符號以底線替換，並清除多餘底線。
+
+**檔案結構：** 腳本輸出的基礎結構（Docstring + Solution class）＋ 手動補充的測試區塊：
+```python
+def main():
+    solution = Solution()
+
+    # Case 1
+    # assert solution.searchRange([5,7,7,8,8,10], 8) == [3,4]
+
+    # Case 2
+    # assert solution.searchRange([5,7,7,8,8,10], 6) == [-1,-1]
+
+    print("All tests passed!")
+
+if __name__ == "__main__":
+    main()
 ```
 
-**支援格式：**
+> ⚠️ 測試值必須填入範例的**實際數值**，禁止使用 `EXPECTED_RESULT` 佔位符。
 
-- 完整 URL：`https://leetcode.com/problems/number-of-islands/`
-- 題目 slug：`number-of-islands`
+**寫入路徑：** `<cwd>/<Category_Name>/<檔名>`
 
-腳本會透過 LeetCode 公開 GraphQL API (`https://leetcode.com/graphql`) 取得資料，**無需登入或 Cookie**。
+---
 
-### 2. 輸出內容
+## Step 4：後續整合（選用）
 
-腳本輸出以下欄位（Markdown 格式）：
-
-- 題目編號、標題、難度（🟢🟡🔴）
-- Topic Tags
-- 完整題目描述（HTML → 純文字）
-- 提示 (Hints)
-- 相關題目 (Similar Questions)
-
-### 3. 後續整合
-
-抓取完成後，可直接將輸出餵給 `algo-interview-prep` 技能進行分析與解題引導。
-
-## 注意事項
-
-- LeetCode Premium 題目可能因未登入而回傳 `null` 內容，此時會顯示「找不到題目」。
-- 速率限制：避免短時間內大量請求。
+完成後可將檔案內容交給 `algo-interview-prep` 技能進行解題引導。
