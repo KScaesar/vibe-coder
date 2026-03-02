@@ -44,8 +44,9 @@ chmod +x scripts/*.sh
 ```
 *Logic*: Checks `downloads/archive.txt`. If video exists, skips download and proceeds to transcription. If transcript exists, it will overwrite (unless script modified).
 
-### Scenario 2: Download Only (Best Quality)
+### Scenario 2: Download Only (Best Quality & Robust)
 Best for archiving without immediate transcription.
+**New Feature**: The script now includes auto-retry logic. If a download fails with 403 Forbidden, it automatically attempts to use cookies from Chrome, then Firefox.
 
 ```bash
 ./scripts/download_video.sh "URL"
@@ -58,7 +59,9 @@ Best for processing existing files or re-running transcription with different se
 ./scripts/transcribe_video.sh "downloads/video.mp4"
 ```
 
-### Scenario 4: Handling 403 / 429 / Login Issues (Authenticated)
+### Scenario 4: Manual Handling of 403 / 429 / Login Issues
+**Note**: The `download_video.sh` script now attempts this automatically (Scenario 2). Use this manual method only if you need specific control or if the script fails.
+
 Use this method when facing HTTP 403 (Forbidden), 429 (Too Many Requests), or Age-Gated content. This is the **most stable** method as it uses your browser's cookies.
 
 ```bash
@@ -117,7 +120,36 @@ Maintain this structure for idempotent automation:
 └── logs/                  # Execution logs
 ```
 
-## Troubleshooting
-- **Slow Transcription**: Ensure `whisper-ctranslate2` is used with `--compute_type int8` on CPU.
-- **Download Fails**: Update `yt-dlp` (`uv tool upgrade yt-dlp`).
-- **OOM (Out of Memory)**: Reduce `--threads` count or switch from `medium` to `small` model.
+## Troubleshooting & Failure Analysis
+
+The updated scripts include detailed logging and automatic failure analysis.
+
+### Checking Logs
+Logs are stored in the `logs/` directory with timestamps.
+```bash
+tail -f logs/yt-dlp_YYYYMMDD_HHMMSS.log
+```
+
+### Common Errors
+
+1. **HTTP Error 403 / Sign in to confirm your age**
+   - **Cause**: YouTube is blocking the request or requires age verification.
+   - **Fix**: The script automatically retries with Chrome/Firefox cookies. Ensure you are logged in to YouTube on your default browser.
+
+2. **429 Too Many Requests**
+   - **Cause**: Your IP is temporarily banned due to excessive requests.
+   - **Fix**: Wait a few hours or use a VPN. The script will try to use browser cookies to bypass this.
+
+3. **Video Unavailable**
+   - **Cause**: The video was deleted, made private, or is region-locked.
+   - **Fix**: Verify the URL in a browser.
+
+4. **Slow Transcription**
+   - **Cause**: Running on CPU without optimization.
+   - **Fix**: Ensure `whisper-ctranslate2` is used with `--compute_type int8` (default in script).
+
+5. **Download Fails**
+   - **Fix**: Update `yt-dlp` (`uv tool upgrade yt-dlp`).
+
+6. **OOM (Out of Memory)**
+   - **Fix**: Reduce `--threads` count or switch from `medium` to `small` model.
