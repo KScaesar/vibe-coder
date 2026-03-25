@@ -1,6 +1,6 @@
 ---
 name: mise
-description: mise cli 適合需要頻繁切換工具版本與多語言環境的情境。它可以選擇將工具版本、環境變數與任務定義集中於單一設定檔，進入目錄即可自動生效，並在執行任務時套用正確的版本與設定，減少手動操作與環境不一致問題，提升整體開發體驗。
+description: mise cli 適合需要頻繁切換工具版本、環境變數與跨平台任務執行的情境。當使用者提到「安裝某種語言版本」、「管理 env vars」、「建立 Makefile 替代方案」或「local 開發環境設定」時，務必觸發此 Skill。Trigger this skill whenever the user mentions managing tool versions (node, python, go, etc.), handling environment variables, creating language-agnostic task runners, or configuring local development environments. It provides a unified experience for tool versioning, secrets management, and cross-platform tasks.
 ---
 
 # Mise Skill
@@ -156,6 +156,27 @@ IDEs and background processes often run in non-interactive mode and do not load 
 - **JetBrains (IntelliJ, PyCharm)**:
   - **Option A**: Install the Mise plugin.
   - **Option B**: Manually set the Project SDK/Interpreter path to the shim executable found in `~/.local/share/mise/shims/`.
+
+## Bundled Resources
+
+- [scripts/check_env.sh](scripts/check_env.sh): A utility script to verify your local `mise` installation and shell configuration.
+- [scripts/ai_exec.sh](scripts/ai_exec.sh): A wrapper script to ensure the `mise` environment is loaded in non-interactive AI agent shells.
+
+## AI Agent Execution Pattern
+
+In non-interactive environments (like AI agents), `mise` cannot rely on `cd` hooks to automatically switch environments. When executing commands that require `mise`-managed tools, use the following pattern:
+
+```bash
+[ "$MISE_FOR_AI" = "1" ] || { eval "$(mise env)" && export MISE_FOR_AI=1; }
+<YOUR_COMMAND>
+```
+
+Alternatively, use the bundled runner (found in the `scripts/` directory of this skill):
+```bash
+./scripts/ai_exec.sh <YOUR_COMMAND>
+```
+
+---
 
 ## Other Reference Materials
 

@@ -1,0 +1,26 @@
+{
+  "skill_name": "mise",
+  "evals": [
+    {
+      "id": 0,
+      "name": "install-node",
+      "prompt": "I need to install Node.js version 20 for this project using mise. How do I do that?",
+      "expected_output": "Instructions to use `mise use node@20` or updating `mise.toml`.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "manage-env-vars",
+      "prompt": "How can I set a secret environment variable DATABASE_URL in mise so it's encrypted?",
+      "expected_output": "Explanation of using `mise set --age-encrypt DATABASE_URL=...` or similar mechanism mentioned in environments.md.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "create-task",
+      "prompt": "Create a mise task named 'deploy' that runs 'npm run build' and then 'firebase deploy'.",
+      "expected_output": "A `[tasks.deploy]` section in `mise.toml` with the correct `run` or `depends` configuration.",
+      "files": []
+    }
+  ]
+}
