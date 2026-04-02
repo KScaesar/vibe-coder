@@ -1,0 +1,19 @@
+{
+  "skill_name": "testing-golang",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "我們有一個處理訂單折扣的函式 `CalculateDiscount(order *Order, user *User) (float64, error)`。請幫我用 TDD 的方式寫出它的測試。要注意各種邊界條件比如訂單金額為 0，或是 VIP 身份過期被降級等情境。",
+      "expected_output": "The skill generates a test file following the testing-golang rules, properly using _NormalCase, _EdgeCase, and _ErrorCase with Given-When-Then BDD naming conventions in t.Run.",
+      "assertions": [],
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "這裡有一個寫得很亂的舊測試，裡面混雜了各種狀態設定與 assertion，而且 t.Run 的名字都只有 'test 1', 'test 2'。請幫我用我們的 Go 測試最佳實踐重構它。",
+      "expected_output": "The skill observes the existing behavior and refactors the tests to follow Given-When-Then format, isolates the setups properly, and uses explicit variable naming like expectedX and actualX in the assertions.",
+      "assertions": [],
+      "files": []
+    }
+  ]
+}

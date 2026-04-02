@@ -10,6 +10,8 @@ AGENTS=(
   "junie"
 )
 
+AGENT_ARGS=$(printf " -a %s" "${AGENTS[@]}")
+
 PATHS=(
   "~/.gemini/antigravity/skills"
   "~/.gemini/skills"
@@ -26,7 +28,6 @@ for i in "${!AGENTS[@]}"; do
 done
 echo "[*] Directories are ready."
 
-AGENT_ARGS=$(printf " -a %s" "${AGENTS[@]}")
 npx skills add vercel-labs/skills $AGENT_ARGS -y -g --copy
 npx skills add anthropics/skills --skill skill-creator $AGENT_ARGS -y -g --copy
 npx skills add vercel-labs/agent-browser --skill agent-browser $AGENT_ARGS -y -g --copy
@@ -42,6 +43,8 @@ npx skills add obra/superpowers --skill writing-plans $AGENT_ARGS -y -g --copy
 npx skills add ./skills/mise $AGENT_ARGS -y -g --copy
 npx skills add ./skills/git-commit $AGENT_ARGS -y -g --copy
 npx skills add ./skills/git-worktree-design $AGENT_ARGS -y -g --copy
+npx skills add ./skills/testing-golang $AGENT_ARGS -y -g --copy
+npx skills add ./skills/spec-by-example $AGENT_ARGS -y -g --copy
 
 # -----------------------------------------------------------------------------
 # Function: sync_skills_to_agents
