@@ -31,7 +31,9 @@ echo "[*] Directories are ready."
 npx skills add vercel-labs/skills $AGENT_ARGS -y -g --copy
 npx skills add anthropics/skills --skill skill-creator $AGENT_ARGS -y -g --copy
 npx skills add vercel-labs/agent-browser --skill agent-browser $AGENT_ARGS -y -g --copy
+mise use -g npm:agent-browser
 npx skills add upstash/context7 --skill context7-cli $AGENT_ARGS -y -g --copy
+mise use -g npm:ctx7
 npx skills add Ben8t/math-spec-driven-skill $AGENT_ARGS -y -g --copy
 
 # npx skills add obra/superpowers --skill using-git-worktrees $AGENT_ARGS -y -g --copy
@@ -54,17 +56,17 @@ npx skills add ./skills/spec-by-example $AGENT_ARGS -y -g --copy
 sync_skills_to_agents() {
   echo "[*] Ensuring all skills are explicitly copied..."
   local UNIVERSAL_DIR=~/.agents/skills
-  
+
   if [ -d "$UNIVERSAL_DIR" ]; then
     for skill_path in "$UNIVERSAL_DIR"/*; do
       if [ -d "$skill_path" ]; then
         local skill_name=$(basename "$skill_path")
         for i in "${!AGENTS[@]}"; do
           local dir_path=$(eval echo "${PATHS[$i]}")
-          
+
           # 先清除可能存在的舊版拷貝或無效的軟連結
           rm -rf "$dir_path/$skill_name"
-          
+
           # 強制將技能實體複製到各個 agent 的目錄中
           cp -R "$skill_path" "$dir_path/$skill_name"
         done
