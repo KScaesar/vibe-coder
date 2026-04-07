@@ -47,6 +47,7 @@ npx skills add ./skills/git-commit $AGENT_ARGS -y -g --copy
 npx skills add ./skills/git-worktree-design $AGENT_ARGS -y -g --copy
 npx skills add ./skills/testing-golang $AGENT_ARGS -y -g --copy
 npx skills add ./skills/spec-by-example $AGENT_ARGS -y -g --copy
+npx skills add ./skills/api-markdown $AGENT_ARGS -y -g --copy
 
 # -----------------------------------------------------------------------------
 # Function: sync_skills_to_agents
