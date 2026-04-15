@@ -107,16 +107,16 @@ Example Flow For Humans:
 ```text
 [Behavior: ChangePassword]
 
-      [Inbound]              [Core: DTO]          [Core: Write Model]       [Outbound]
+[Driving Adapter]        [Core: DTO]               [Core: Write Model]        [Driven Adapter]
 
-ChangePasswordRequest ──► ChangePasswordInput ──► User (Domain Entity) ──►  UserSchema
+ChangePasswordRequest ──► ChangePasswordInput ─────► User (Domain Entity) ───► UserSchema
 ```
 
 Example Flow For LLM Agents:
 
 ```mermaid
 flowchart LR
-    subgraph Inbound
+    subgraph DrivingAdapter ["Driving Adapter"]
         Req[ChangePasswordRequest]
     end
     subgraph CoreDTO ["Core: DTO"]
@@ -125,7 +125,7 @@ flowchart LR
     subgraph CoreWrite ["Core: Write Model"]
         Domain["User (Domain Entity)"]
     end
-    subgraph Outbound
+    subgraph DrivenAdapter ["Driven Adapter"]
         Schema[UserSchema]
     end
     Req --> Input
@@ -144,18 +144,18 @@ Example Flow For Humans:
 ```text
 [Behavior: GetUserProfile]
 
-      [Inbound]              [Core: DTO]          [Core: Read Model]        [Outbound]
+[Driving Adapter]        [Core: DTO]               [Core: Read Model]         [Driven Adapter]
 
-GetUserProfileRequest ──► GetUserProfileInput ────────────────────────────►  UserSchema
+GetUserProfileRequest ──► GetUserProfileInput ───────────────────────────────► UserSchema
                                                                                  │
- UserProfileResponse  ◄── UserProfileOutput   ◄──────────────────────────────────┘
+UserProfileResponse  ◄─── UserProfileOutput ◄────────────────────────────────────┘
 ```
 
 Example Flow For LLM Agents:
 
 ```mermaid
 flowchart LR
-    subgraph Inbound
+    subgraph DrivingAdapter ["Driving Adapter"]
         Req[GetUserProfileRequest]
         Res[UserProfileResponse]
     end
@@ -163,7 +163,7 @@ flowchart LR
         Input[GetUserProfileInput]
         Output[UserProfileOutput]
     end
-    subgraph Outbound
+    subgraph DrivenAdapter ["Driven Adapter"]
         Schema[UserSchema]
     end
     Req --> Input
@@ -178,27 +178,33 @@ flowchart LR
 
 ##### 進階寫入 (Complex Write)
 
-當寫入邏輯比較複雜時（e.g., 密碼雜湊、驗證信發送），`Input` 僅包含原始資料，需轉換為 `Command` 以攜帶語意與驗證後的狀態，封裝明確的「意圖」(Intent)。例如 `RegisterUserCommand` 可能包含已雜湊的密碼，而非僅是單純的資料更新。
+`Input` 只負責承載外部傳入的原始資料，不做任何處理。`Command` 負責將原始資料**轉換**（e.g., 明文密碼 → 雜湊密碼）或**補全缺少的內部參數**（e.g., 從資料庫取得正確商品單價），確保傳入 Write Model 的資料是可信賴且完整的。Write Model 則只專注在維護 Domain Entity 的狀態一致性，不需要知道資料從何而來、如何處理。
+
+- 使用者註冊：`Input` 帶著明文密碼，`RegisterUserCommand` 將其雜湊後再傳入，Write Model 不需要知道密碼如何處理，只負責建立 User Entity。
+- 電商下單：`Input` 帶著前端傳入的商品 ID 與數量，`PlaceOrderCommand` 從資料庫取得正確單價並計算總金額，Write Model 不需要知道金額從哪來，只負責建立 Order Entity。
+
+`Command` 與 `Query` 概念類似，都作為外部輸入與內部邏輯之間的邊界，負責將外部資料轉換為內部可直接運算的表示；差別在於 `Command` 對應寫入流程，`Query` 對應讀取流程。
 
 _(註: 若 API 結構與 Input 一致，可省略 Request 定義；若 Entity 與 DB Table 一致，可省略 Schema 定義)_
 
 Example Flow For Humans:
 
 ```text
-[Behavior: RegisterUser (Complex Logic)]
+[Behavior: RegisterUser]
 
-      [Inbound]              [Core: DTO]          [Core: Write Model]       [Outbound]
+[Driving Adapter]        [Core: DTO]               [Core: Write Model]        [Driven Adapter]
 
- RegisterUserRequest  ──► RegisterUserInput
-                                 ▼
-                          RegisterUserCommand  ──► User (Domain Entity) ──►  UserSchema
+RegisterUserRequest ──► RegisterUserInput
+                              │
+                              ▼
+                       RegisterUserCommand ───────► User (Domain Entity) ─────► UserSchema
 ```
 
 Example Flow For LLM Agents:
 
 ```mermaid
 flowchart LR
-    subgraph Inbound
+    subgraph DrivingAdapter ["Driving Adapter"]
         Req[RegisterUserRequest]
     end
     subgraph CoreDTO ["Core: DTO"]
@@ -208,7 +214,7 @@ flowchart LR
     subgraph CoreWrite ["Core: Write Model"]
         Domain["User (Domain Entity)"]
     end
-    subgraph Outbound
+    subgraph DrivenAdapter ["Driven Adapter"]
         Schema[UserSchema]
     end
     Req --> Input
@@ -221,21 +227,24 @@ flowchart LR
 
 當讀取場景需要處理複雜過濾條件或特別的讀取邏輯需要運算，引入以下概念：
 
-- **Query**: 當讀取模型與寫入模型差異巨大時，將複雜過濾條件封裝於 `Query` 中，優化查詢效能並解耦讀寫邏輯 (**CQS 讀寫分離**)。
-- **View**: 當有特別的讀取邏輯需要「運算」時 (e.g., 權限判斷 `CanShow`, 資料遮罩 `MaskEmail`)，將顯示邏輯內聚於 `View`，避免散落在 Service 或 API 層。
+- `Query` 當查詢參數需要轉換才能被後續程式碼運算時（e.g., 前端傳入 IP 字串 `"192.168.1.1"` 轉換為 IP 物件以便做網段比對、日期字串 `"2024-01-01"` 轉換為 timestamp 以便做時間範圍查詢，或基於效能考量調整資料結構），將這些轉換邏輯封裝於 `Query` 中。`Query` 作為外部輸入與內部查詢邏輯之間的邊界，確保系統只需面對已轉換的內部表示。
+- `View` 當從資料庫取得的資料需要經過「運算」才能成為最終輸出時（e.g., 廣告平台根據剩餘預算與今日曝光量決定是否曝光廣告 `AdDisplayPolicy`、對敏感資料進行遮罩處理 `MaskEmail`），將這些展示邏輯內聚於 `View` 中。若直接放在 `Output`，`Output` 會從純資料結構變成含有邏輯的物件，職責不清；若放在 `Service`，`Service` 則會混入展示層的關注點，違反單一職責。`View` 作為 Schema 與 Output 之間的運算層，確保每一層只做自己該做的事。
+
+`Command` 與 `Query` 概念類似，都作為外部輸入與內部邏輯之間的邊界，負責將外部資料轉換為內部可直接運算的表示；差別在於 `Command` 對應寫入流程，`Query` 對應讀取流程。
 
 _(註: 若 API 結構與 Output 一致，可省略 Response 定義；若 DB 查詢結果與 Output 一致，可省略 Schema 定義)_
 
 Example Flow For Humans:
 
 ```text
-[Behavior: SearchActiveUsers (CQS)]
+[Behavior: SearchActiveUsers]
 
-      [Inbound]                [Core: DTO]            [Core: Read Model]      [Outbound]
+[Driving Adapter]          [Core: DTO]               [Core: Read Model]        [Driven Adapter]
 
                            SearchActiveUsersQuery ────────────────────────────────┐
-                                     ▲                                            ▼
-SearchActiveUsersRequest ──► SearchActiveUsersInput                           UserSchema
+                                    ▲                                             │
+                                    │                                             ▼
+SearchActiveUsersRequest ──► SearchActiveUsersInput                              UserSchema
                                                                                   ▼
       UserResponse       ◄──    UserOutput      ◄──────  ActiveUserView    ───────┘
 ```
@@ -244,7 +253,7 @@ Example Flow For LLM Agents:
 
 ```mermaid
 flowchart LR
-    subgraph Inbound
+    subgraph DrivingAdapter ["Driving Adapter"]
         Req[SearchActiveUsersRequest]
         Res[UserResponse]
     end
@@ -256,7 +265,7 @@ flowchart LR
     subgraph CoreRead ["Core: Read Model"]
         View[ActiveUserView]
     end
-    subgraph Outbound
+    subgraph DrivenAdapter ["Driven Adapter"]
         Schema[UserSchema]
     end
     Req --> Input
