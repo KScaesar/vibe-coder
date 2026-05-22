@@ -34,7 +34,8 @@ npx skills add vercel-labs/agent-browser --skill agent-browser $AGENT_ARGS -y -g
 mise use -g npm:agent-browser
 npx skills add upstash/context7 --skill context7-cli $AGENT_ARGS -y -g --copy
 mise use -g npm:ctx7
-npx skills add Ben8t/math-spec-driven-skill $AGENT_ARGS -y -g --copy
+# npx skills add Ben8t/math-spec-driven-skill $AGENT_ARGS -y -g --copy
+npx skills add multica-ai/andrej-karpathy-skills $AGENT_ARGS -y -g --copy
 
 # npx skills add obra/superpowers --skill using-git-worktrees $AGENT_ARGS -y -g --copy
 # npx skills add obra/superpowers --skill receiving-code-review $AGENT_ARGS -y -g --copy
