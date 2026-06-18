@@ -4,7 +4,7 @@
 # 1. 為了相容 macOS 預設的 Bash 3.2 (不支援 declare -A 關聯陣列)，改用兩個對應陣列
 AGENTS=(
   "antigravity"
-  "gemini-cli"
+  "claude-code"
   "codex"
   "opencode"
   "junie"
