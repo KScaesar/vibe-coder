@@ -13,9 +13,9 @@ AGENTS=(
 AGENT_ARGS=$(printf " -a %s" "${AGENTS[@]}")
 
 PATHS=(
-  "~/.gemini/antigravity/skills"
-  "~/.gemini/skills"
+  "~/.claude/skills/"
   "~/.codex/skills"
+  "~/.gemini/config/skills/"
   "~/.config/opencode/skills"
   "~/.junie/skills"
 )
@@ -42,6 +42,10 @@ npx skills add multica-ai/andrej-karpathy-skills $AGENT_ARGS -y -g --copy
 npx skills add obra/superpowers --skill brainstorming $AGENT_ARGS -y -g --copy
 npx skills add obra/superpowers --skill writing-plans $AGENT_ARGS -y -g --copy
 
+npx skills add mattpocock/skills --skill grill-me $AGENT_ARGS -y -g --copy
+npx skills add mattpocock/skills --skill grill-with-docs $AGENT_ARGS -y -g --copy
+npx skills add mattpocock/skills --skill domain-modeling $AGENT_ARGS -y -g --copy
+
 # npx skills add ./skills/youtube-download $AGENT_ARGS -y -g --copy
 npx skills add ./skills/mise $AGENT_ARGS -y -g --copy
 npx skills add ./skills/git-commit $AGENT_ARGS -y -g --copy
@@ -49,6 +53,7 @@ npx skills add ./skills/git-worktree-design $AGENT_ARGS -y -g --copy
 npx skills add ./skills/testing-golang $AGENT_ARGS -y -g --copy
 npx skills add ./skills/spec-by-example $AGENT_ARGS -y -g --copy
 npx skills add ./skills/api-markdown $AGENT_ARGS -y -g --copy
+npx skills add ./skills/handoff $AGENT_ARGS -y -g --copy
 
 # -----------------------------------------------------------------------------
 # Function: sync_skills_to_agents
