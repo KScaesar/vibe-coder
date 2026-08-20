@@ -44,7 +44,7 @@ description: "A comprehensive guide to generating or refactoring Golang tests us
 func Test[MethodOrFunction]_Normal(t *testing.T) {  
     t.Parallel() // 標記為可並行  
 
-    t.Run("[1] Given a valid user ID When fetching the user Then the correct user data is returned", func(t *testing.T) {  
+    t.Run("[1] 'Given' 有效的 user ID 'When' 查詢該 user 'Then' 應回傳正確的 user 資料", func(t *testing.T) {  
         // Given - 設定測試前置條件  
         // 初始化測試數據、設定 Mock 物件等  
 
@@ -56,7 +56,7 @@ func Test[MethodOrFunction]_Normal(t *testing.T) {
         // assert.Equal(t, expected, result, "The returned data should match the expected value")  
     })  
 
-    t.Run("[2] Given a valid input with a boundary value When processing Then it succeeds", func(t *testing.T) {  
+    t.Run("[2] 'Given' 邊界值的合法輸入 'When' 執行處理 'Then' 應成功完成", func(t *testing.T) {  
         // todo
     })  
 }
@@ -76,9 +76,9 @@ func TestAdd_Normal(t *testing.T) {
         b        int  
         expected int  
     }{  
-        {"[1] Given two positive numbers When added Then the sum is correct", 5, 3, 8},  
-        {"[2] Given a positive and a negative number When added Then the result is correct", 10, -5, 5},  
-        {"[3] Given a number and zero When added Then the result is the number itself", 100, 0, 100},  
+        {"[1] 'Given' two positive numbers 'When' added 'Then' the sum is correct", 5, 3, 8},  
+        {"[2] 'Given' 一個正整數與一個負整數 'When' 執行相加 'Then' 應回傳正確的結果", 10, -5, 5},  
+        {"[3] 'Given' 一個數字與零 'When' 執行相加 'Then' 應回傳該數字本身", 100, 0, 100},  
     }  
 
     for _, tt := range testcases {  
@@ -99,6 +99,16 @@ func TestAdd_Normal(t *testing.T) {
 * 原則：為確保測試能作為規格文件閱讀，請採用 Given-When-Then 格式命名所有 `t.Run`。這有助於後續維護人員快速理解各種業務場景與預期行為。
 * 目的：測試名稱清楚表達測試的情境 (Given)、操作 (When) 和預期結果 (Then)。
 * 註解：在 t.Run 內部，使用 Given, When, Then 註解來劃分程式碼區塊，引導開發者的閱讀動線。
+* 語言規則：
+  * 案例描述預設使用 **zh-tw** 撰寫，除非使用者特別指定只用英文 **en-us** 描述。
+  * `Given`、`When`、`Then` 三個關鍵字須以單引號 `''` 標示，例如 `'Given' ... 'When' ... 'Then' ...`。
+  * 專有名詞與技術術語（如函式名稱、型別、套件名稱、error 值等）保持英文，不需翻譯，句子其餘部分維持 zh-tw，兩者穿插並存。
+  * 範例（預設 zh-tw，技術術語保持 en-us 穿插）：
+    * `"[1] 'Given' 一個 nil 的 UserRepository 'When' 呼叫 GetUser 'Then' 應回傳 ErrNotFound"`
+    * `"[2] 'Given' 一個空的 context.Context 'When' 呼叫 FetchOrder 'Then' 應回傳 context.Canceled"`
+  * 範例（指定英文描述時，全部改為 en-us）：
+    * `"[1] 'Given' a nil UserRepository 'When' calling GetUser 'Then' it should return ErrNotFound"`
+    * `"[2] 'Given' an empty context.Context 'When' calling FetchOrder 'Then' it should return context.Canceled"`
 
 ### 4. 推薦測試套件
 
@@ -116,8 +126,9 @@ func TestAdd_Normal(t *testing.T) {
 
 ### 2. 子測試命名 (t.Run Name Format)
 
-* `[Seq] Given [具體條件] When [具體操作] Then [具體預期結果]`
-*  加上 前綴序列號 利於辨識
+* `[Seq] 'Given' [具體條件] 'When' [具體操作] 'Then' [具體預期結果]`
+* 加上 前綴序列號 利於辨識
+* 預設以 **zh-tw** 撰寫描述內容，除非使用者特別指定只用英文；`Given`、`When`、`Then` 三個關鍵字須以單引號 `''` 標示；專有名詞與技術術語保持英文。
 
 ### 3. 變數命名 (Variable Naming)
 
