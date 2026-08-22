@@ -1,193 +1,204 @@
 ---
 name: mise
-description: mise cli 適合需要頻繁切換工具版本、環境變數與跨平台任務執行的情境。當使用者提到「安裝某種語言版本」、「管理 env vars」、「建立 Makefile 替代方案」或「local 開發環境設定」時，務必觸發此 Skill。Trigger this skill whenever the user mentions managing tool versions (node, python, go, etc.), handling environment variables, creating language-agnostic task runners, or configuring local development environments. It provides a unified experience for tool versioning, secrets management, and cross-platform tasks.
+description: Manage development environments, runtime toolchains (Node.js, Python, Go, Java, etc.), environment variables, secrets, and cross-platform task automation using Mise. Trigger this skill whenever the user asks to install or switch language tool versions, configure environment variables or .env files, manage global/local developer toolchains, or set up development environments.
 ---
 
 # Mise Skill
 
-Mise is a comprehensive tool for managing development environments. It handles tool version management, environment variable configuration, and task execution, replacing multiple single-purpose tools with a unified experience.
+Mise is a polyglot tool version manager and development environment orchestrator. It manages toolchains (Node, Go, Python, Java, etc.), environment variables, and task runners.
 
-install:
+## Universal Constraint: Explicit Version Pinning (NEVER use `@latest`)
 
-```sh
-curl https://mise.run | sudo MISE_INSTALL_PATH=/usr/local/bin/mise sh
+- **Strict Prohibition**: NEVER use `mise use <tool>@latest`, `mise install <tool>@latest`, or `@latest` in configuration files (`mise.toml`, `config.toml`).
+- **Rationale**: `@latest` forces dynamic remote registry queries on every command, causing DNS resolution timeouts in sandboxed/offline environments and breaking build reproducibility.
+- **Workflow to Install Latest**:
+  ```bash
+  mise use -g <tool>@$(mise latest <tool>)
+  ```
+  *(Resolves the latest version once and writes the concrete version string, e.g. `go = "1.24.0"`, into the active configuration).*
+
+---
+
+## Pre-Installation Check & Intent Clarification
+
+Whenever the user asks to install, upgrade, use, or switch a tool (Node, Go, Python, usage, npm CLIs, etc.):
+
+- **Mandatory Pre-Check**: Run [scripts/check_tool.sh](scripts/check_tool.sh) `<tool> [target_version]` **BEFORE** executing any installation, upgrade, or version change.
+- **Do NOT Guess or Execute Directly**: Do not run `mise use` or `mise upgrade` without first executing the script.
+
+```bash
+bash scripts/check_tool.sh <tool> [target_version]
 ```
+
+### Deterministic Gatekeeper & `ask_question` Enforcement
+
+- **Exit Code 0 (`ALREADY_ACTIVE` / `NEW_INSTALL`)**:
+  - Safe to proceed or no action needed. If scope (Project vs Global `-g`) is ambiguous for new installs, clarify with the user.
+- **Exit Code 2 (`REQUIRES_USER_DECISION` / `VERSION_CHANGE`)**:
+  - **🛑 STRICT PROHIBITION**: NEVER execute `mise use` or `mise upgrade` directly in the same turn.
+  - **MANDATORY TOOL GATE**: The Agent **MUST IMMEDIATELY invoke the `ask_question` tool** using the questions and options provided in `ask_question_payload` from the script's JSON output.
+  - **Human-In-The-Loop Execution**: Only execute the command after the user selects an option via `ask_question`:
+    1. **Scenario 1 (Upgrade Existing Version)**: `mise upgrade <tool> --bump`
+    2. **Scenario 2 (Coexistence & Global Switch)**: `mise use -g <tool>@<target_version>`
+    3. **Scenario 3 (Project-local Switch)**: `mise use <tool>@<target_version>`
+
+---
+
+## AI Agent Execution Patterns
+
+In non-interactive subshells (`bash -c`), `cd` does not trigger shell prompt hooks. Follow the sequential workflow below to select and apply the correct execution pattern:
+
+- **Session Consistency**: Once the execution pattern is determined, stick with it consistently for all subsequent commands without re-running the diagnostic.
+- **When NOT to Run**: Do NOT re-run `scripts/check_env.sh` before routine commands once the pattern is established.
+
+### Step 1: Discover Environment First (`scripts/check_env.sh`)
+
+- **Mandatory Discovery**: Run [scripts/check_env.sh](scripts/check_env.sh) **once** at the start of a session or when first discovering an environment.
+- **Do NOT Guess**: Do not arbitrarily assume Pattern 1 or Pattern 2 before running the diagnostic script.
+- **Follow Action Directive**: Inspect the `[Agent Action Directive]` output from the script and adopt the recommended pattern.
+
+### Step 2: Apply the Detected Pattern
+
+#### Pattern 1: Shims (Recommended — Clean Native Commands)
+
+Adopted when `check_env.sh` reports `Pattern 1 is ACTIVE`.
+
+- **Host Setup (One-time)**:
+- **Agent Command Execution**:
+  Directly execute clean native commands without any wrappers or prefixes:
+- **Mechanism**: The shim executable (e.g. `~/.local/share/mise/shims/go`) automatically detects `./mise.toml` at runtime and dispatches to the correct version.
+
+#### Pattern 2: Explicit Execution (`mise exec --` / `mise x --`)
+
+Adopted as fallback when `check_env.sh` reports Pattern 1 is not configured.
+
+- **Agent Command Execution**:
+  Use `mise exec --` (or `mise x --`) as a single binary prefix:
+  ```bash
+  mise exec -- go build ./...
+  mise x -- uv run pytest
+  ```
+- **Mechanism**: Loads local `./mise.toml` tools and environment variables for the command.
+
+---
+
+### Troubleshooting & Sandbox Execution
+
+- **Network Resolution Timeout**: Pass `MISE_OFFLINE=1` (e.g. `MISE_OFFLINE=1 mise reshim`) to prevent network queries.
+- **Sandbox Filesystem Protection**: Run global setup (`mise reshim`) with host execution permissions (`BypassSandbox: true`).
+- **Agent Rule**: If `mise` encounters network/DNS hangs, proactively ask the user for clarification before proceeding.
+
+---
 
 ## Getting Started
 
 Based on [Getting Started](references/getting_started.md).
 
-Mise allows you to run tools without installing them globally or recursively.
-
 ### Core Concepts
 
 - **Exec (`mise x`)**: Run a tool in an ephemeral environment.
   ```bash
-  mise exec node@20 -- node app.js
+  mise exec node@22 -- node app.js
   ```
-- **Use (`mise use`)**: Install and pin a tool version for the current directory.
-  ```bash
-  mise use node@20
-  ```
+- **Use (`mise use`)**: Install and configure tool versions.
+  - **Project / Current Config**: `mise use node@22` (updates the configuration file where `node` is defined, or creates `./mise.toml`).
+  - **Global Explicit (`-g`)**: `mise use -g go@$(mise latest go)` (writes to global configuration).
+  - **Backend Packages**: `mise use -g npm:agent-browser@$(mise latest npm:agent-browser)`.
+  - **Pin Exact**: `mise use --pin node@22.14.0`.
+- **Upgrade (`mise upgrade`)**: Automatically upgrade tools to newer versions and bump configuration in-place.
 - **Run (`mise run`)**: Execute tasks defined in `mise.toml`.
-- **Activate**: Integrate mise with your shell to automatically load tools and env vars when entering directories.
+- **Activate**: Integrate mise with your shell.
 
 ### Common Commands
 
-- `mise ls`: List installed tools.
-- `mise install`: Install tools defined in config.
-- `mise doctor`: Diagnose issues.
-- `mise upgrade`: Upgrade tool versions.
+- `mise ls`: List installed tools and active versions.
+- `mise upgrade`: Automatically upgrade outdated tools (`mise upgrade <tool> --bump`).
+- `mise use`: Set active tool version in project or global config (`mise use <tool>@<version>`).
+- `mise doctor`: Diagnose environment and configuration issues.
+
+---
 
 ## Environments
 
 Based on [Environments](references/environments.md).
 
-Mise manages environment variables via `mise.toml` or `[env]` sections.
+Mise manages environment variables via `mise.toml` `[env]` sections:
+```toml
+[env]
+_.file = ".env"
+NODE_ENV = "production"
+```
 
-### Features
+---
 
-- **Project Structure**: Define env vars per project in `mise.toml`.
-- **Dynamic Values**: Use templates like `{{config_root}}` or `{{env.HOME}}`.
-- **Secrets**: Encrypt sensitive variables using `mise set --age-encrypt`.
-- **Loading from Files**: Load `.env` files using `env._.file`.
-  ```toml
-  [env]
-  _.file = ".env"
-  NODE_ENV = "production"
-  ```
-- **Redaction**: Mark variables as sensitive to prevent leakage in logs.
-
-## Dev Tools
+## Dev Tools & Multiple Backends
 
 Based on [Dev Tools](references/dev_tools.md).
 
-Mise is a polyglot tool version manager, supporting hundreds of languages and tools via a registry and plugins.
+Define tools in `mise.toml`:
+Mise is a polyglot manager supporting runtimes and CLI tools via multiple package ecosystems (backends):
 
-### Key Capabilities
+### Supported Backend Prefixes
+- **Core / Plugins**: Direct language runtimes (e.g. `node@22.14.0`, `go@1.24.0`, `python@3.12.0`).
+- **NPM (`npm:<package>`)**: JavaScript/Node CLIs (e.g. `npm:agent-browser`, `npm:@google/gemini-cli`).
+- **Cargo (`cargo:<crate>`)**: Rust binary crates (e.g. `cargo:ripgrep`, `cargo:eza`).
+- **Pipx (`pipx:<package>`)**: Python standalone applications (e.g. `pipx:black`, `pipx:ruff`).
+- **Aqua (`aqua:<repo>`)**: Direct prebuilt GitHub releases (e.g. `aqua:duckdb/duckdb`).
+- **Ubi (`ubi:<repo>`)**: Universal binary installer from GitHub releases (e.g. `ubi:BurntSushi/ripgrep`).
 
-- **Backends**: Supports multiple backends (core, asdf, cargo, npm, go, etc.).
-- **Shims**: Use shims for IDE integration or non-interactive shells.
-- **Lockfiles**: Use `mise.lock` for reproducible tool versions across teams (Experimental).
-- **Tool Stubs**: Generate executable stubs for tools to avoid full installation overhead until needed.
+### Usage Examples
+```bash
+# Install NPM-based CLI:
+mise use -g npm:agent-browser@$(mise latest npm:agent-browser)
 
-### Configuration
+# Install Cargo-based CLI:
+mise use -g cargo:ripgrep@14.1.0
 
-Tools are defined in the `[tools]` section of `mise.toml`:
+# Install Aqua prebuilt binary:
+mise use -g aqua:duckdb/duckdb@1.4.5
+```
 
+### Configuration (`mise.toml` / `~/.config/mise/config.toml`)
 ```toml
 [tools]
-node = "20"
-python = "3.11"
-terraform = "1.5"
+node = "22.14.0"
+python = "3.12.0"
+go = "1.24.0"
+"npm:agent-browser" = "0.22.2"
+"npm:@google/gemini-cli" = "0.1.5"
+"aqua:duckdb/duckdb" = "1.4.5"
 ```
+
+For more details on backend configuration, lockfiles, and registries, see [references/dev_tools.md](references/dev_tools.md).
+
+---
 
 ## Tasks
 
 Based on [Tasks](references/tasks.md).
 
-Mise includes a task runner similar to `make` or `npm scripts` but language-agnostic.
-
-### Task Definitions
-
-Tasks can be defined in `mise.toml` or as standalone scripts in `mise-tasks/`.
-
+Define task pipelines in `mise.toml`:
 ```toml
 [tasks.build]
 description = "Build the project"
 run = "cargo build"
 depends = ["lint"]
-sources = ["src/**/*.rs"]
-outputs = ["target/debug/app"]
-```
-
-### Features
-
-- **Dependencies**: Define task execution order (`depends`, `depends_post`).
-- **Parallelism**: Runs independent tasks in parallel.
-- **Caching**: Skip tasks if sources haven't changed.
-- **Watch**: Re-run tasks on file changes (`mise watch`).
-- **Arguments**: Pass arguments to tasks using the usage spec.
-
-## IDE Integration & Shell Configuration
-
-Understanding the difference between interactive and non-interactive shells is key to configuring IDEs correctly.
-
-### 1. Interactive Shells (Terminal)
-
-This is your standard terminal usage where you type commands.
-
-- **Mechanism**: Uses shell hooks to dynamically load environments.
-- **Config File**: `~/.zshrc` (Zsh) or `~/.bashrc` (Bash).
-- **Setup**:
-  ```bash
-  eval "$(mise activate zsh)"
-  ```
-
-### 2. Non-Interactive Shells (IDEs, Scripts, GUI Apps)
-
-IDEs and background processes often run in non-interactive mode and do not load `.zshrc`. Using `activate` here will often fail.
-
-- **Mechanism**: Uses Shims (executables that intercept commands) to route to the correct tool version.
-- **Config File**: `~/.zprofile` (Zsh) or `~/.profile` (Bash).
-- **Setup**:
-  Add the shims directory to your PATH _before_ system paths.
-  ```sh
-  # ~/.zprofile
-  eval "$(mise activate zsh --shims)"
-
-  # ~/.bash_profile or ~/.bash_login or ~/.profile
-  eval "$(mise activate bash --shims)"
-  ```
-
-### Summary Comparison
-
-| Feature     | Interactive Terminal | IDE / Scripts / Non-Interactive |
-| :---------- | :------------------- | :------------------------------ |
-| Method      | `mise activate`      | Shims / `mise exec`             |
-| Config File | `~/.zshrc`           | `~/.zprofile` / `~/.profile`    |
-| Mechanism   | Shell Hooks (Prompt) | System PATH intercept           |
-
-### 3. IDE Specific Recommendations
-
-- **VS Code**:
-  - **Best Practice**: Install the official Mise extension (publisher: `jdx`). It handles the environment injection automatically.
-
-- **JetBrains (IntelliJ, PyCharm)**:
-  - **Option A**: Install the Mise plugin.
-  - **Option B**: Manually set the Project SDK/Interpreter path to the shim executable found in `~/.local/share/mise/shims/`.
-
-## Bundled Resources
-
-- [scripts/check_env.sh](scripts/check_env.sh): A utility script to verify your local `mise` installation and shell configuration.
-- [scripts/ai_exec.sh](scripts/ai_exec.sh): A wrapper script to ensure the `mise` environment is loaded in non-interactive AI agent shells.
-
-## AI Agent Execution Pattern
-
-In non-interactive environments (like AI agents), `mise` cannot rely on `cd` hooks to automatically switch environments. When executing commands that require `mise`-managed tools, use the following pattern:
-
-```bash
-[ "$MISE_FOR_AI" = "1" ] || { eval "$(mise env)" && export MISE_FOR_AI=1; }
-<YOUR_COMMAND>
-```
-
-Alternatively, use the bundled runner (found in the `scripts/` directory of this skill):
-```bash
-./scripts/ai_exec.sh <YOUR_COMMAND>
 ```
 
 ---
 
-## Other Reference Materials
+## IDE Integration
 
-For more detailed information, refer to the detailed markdown files in the `references/` directory:
+- **VS Code**: Install official `Mise` extension (`jdx`).
+- **JetBrains**: Set SDK/Interpreter to the shim in `~/.local/share/mise/shims/`.
 
-- [getting_started.md](references/getting_started.md): Installation, basic usage, IDE integration, and troubleshooting.
-- [environments.md](references/environments.md): Managing environment variables, secrets, and configuration files.
-- [dev_tools.md](references/dev_tools.md): Tool version management, backends, shims, and lockfiles.
-- [tasks.md](references/tasks.md): Definition and execution of tasks, dependencies, and file watching.
-- [advanced.md](references/advanced.md): Advanced configuration, cookbooks for specific languages (Node.js, C++, etc.), and CI/CD tips.
-- [cli.md](references/cli.md): Complete reference for all CLI commands and flags. Try `mise [COMMAND] -h` first.
-- [plugins.md](references/plugins.md): CLI reference for managing plugins (install, update, uninstall).
-- [other.md](references/other.md): Plugin architecture, guide to creating custom plugins, and direnv migration/deprecation.
-- [index.md](references/index.md): Documentation index.
+---
+
+## Reference Materials
+
+- [getting_started.md](references/getting_started.md)
+- [environments.md](references/environments.md)
+- [dev_tools.md](references/dev_tools.md)
+- [tasks.md](references/tasks.md)
+- [advanced.md](references/advanced.md)
+- [cli.md](references/cli.md)
