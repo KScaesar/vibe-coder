@@ -63,9 +63,21 @@ In non-interactive subshells (`bash -c`), `cd` does not trigger shell prompt hoo
 
 Adopted when `check_env.sh` reports `Pattern 1 is ACTIVE`.
 
-- **Host Setup (One-time)**:
-- **Agent Command Execution**:
-  Directly execute clean native commands without any wrappers or prefixes:
+- **Host Setup (One-time)**: Split activation across shell rc files so
+  non-interactive/agent subshells inherit shims without relying on the
+  prompt hook:
+  ```bash
+  # ~/.zprofile (non-interactive / login shell — read once, inherited by subshells)
+  eval "$(mise activate zsh --shims)"
+
+  # ~/.zshrc (interactive shell — place LAST, after any other PATH exports)
+  eval "$(mise activate zsh)"
+  ```
+  Do NOT put `--shims` in `~/.zshrc`/`~/.bashrc` — that loses `mise activate`'s
+  full feature set (env vars from `mise.toml`, `cd`/`enter`/`exit`/`watch_files`
+  hooks) for interactive human sessions.
+- **Agent Command Execution**: Directly execute clean native commands, e.g.
+  `go build ./...`, `node app.js`, `uv run pytest` — no `mise exec --` prefix needed.
 - **Mechanism**: The shim executable (e.g. `~/.local/share/mise/shims/go`) automatically detects `./mise.toml` at runtime and dispatches to the correct version.
 
 #### Pattern 2: Explicit Execution (`mise exec --` / `mise x --`)

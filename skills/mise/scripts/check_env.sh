@@ -71,19 +71,19 @@ USER_SHELL_NAME=$(basename "${SHELL:-bash}")
 case "$USER_SHELL_NAME" in
     zsh)
         ACTIVATE_CMD='eval "$(mise activate zsh --shims)"'
-        RC_FILE="~/.zshrc"
+        RC_FILE="~/.zprofile (non-interactive/login shell — NOT ~/.zshrc)"
         ;;
     bash)
         ACTIVATE_CMD='eval "$(mise activate bash --shims)"'
-        RC_FILE="~/.bashrc (or ~/.bash_profile)"
+        RC_FILE="~/.profile (non-interactive/login shell — NOT ~/.bashrc)"
         ;;
     fish)
         ACTIVATE_CMD='mise activate fish --shims | source'
-        RC_FILE="~/.config/fish/config.fish"
+        RC_FILE="~/.config/fish/config.fish (fish sources this file for both login and non-login shells)"
         ;;
     *)
         ACTIVATE_CMD='eval "$(mise activate --shims)"'
-        RC_FILE="your shell profile"
+        RC_FILE="your shell's non-interactive/login profile"
         ;;
 esac
 
