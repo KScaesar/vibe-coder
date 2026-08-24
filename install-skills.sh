@@ -82,7 +82,39 @@ sync_skills_to_agents() {
   fi
 }
 
+# -----------------------------------------------------------------------------
+# Function: sync_global_rules
+# 意圖: 將專案的 AGENTS.md 同步複製到各個 agent 的 Global 規則路徑
+# -----------------------------------------------------------------------------
+sync_global_rules() {
+  echo "[*] Syncing global AGENTS.md to agents..."
+  local SOURCE_RULE="$(dirname "$0")/AGENTS.md"
+
+  if [ ! -f "$SOURCE_RULE" ]; then
+    echo "[!] Source rule file $SOURCE_RULE not found, skipping."
+    return
+  fi
+
+  # 定義各 Agent 的 Global 規則目標路徑
+  local RULE_TARGETS=(
+    "~/.claude/CLAUDE.md"
+    "~/.codex/AGENTS.md"
+    "~/.gemini/GEMINI.md"
+    "~/.config/opencode/AGENTS.md"
+    "~/.junie/AGENTS.md"
+  )
+
+  for target in "${RULE_TARGETS[@]}"; do
+    local expanded_target=$(eval echo "$target")
+    mkdir -p "$(dirname "$expanded_target")"
+    cp "$SOURCE_RULE" "$expanded_target"
+    echo "    -> Synced to $target"
+  done
+}
+
 # 執行同步複製
 sync_skills_to_agents
+sync_global_rules
 
 echo "[*] All done!"
+

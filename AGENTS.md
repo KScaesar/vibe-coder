@@ -1,14 +1,20 @@
 # AGENTS.md
 
-## Python 使用規則
+## Language & Communication
 
-- 所有 Python 程式碼的撰寫、執行與依賴管理，一律使用 uv。
-- 不得直接使用 pip、poetry、conda、或系統 python 進行安裝或執行。
-- Python 指令一律透過 `uv run` 執行。
+- Respond in Traditional Chinese (`zh-TW`) for all conversational interactions and Q&A.
+- Keep technical terms, programming keywords, and proper nouns in English (`en-US`, e.g., `toolchain`, `shims`, `prefix matching`, `auto-approval`).
 
-### Shell Command Line Execution Rule
+## Python Usage Rules
 
-本專案環境由 `mise` 管理。執行任何指令前，請務必遵循 `mise` skill 中定義的「AI Agent Execution Pattern」，以確保環境正確載入。
+- All Python development, execution, and dependency management MUST use `uv`.
+- Direct usage of `pip`, `poetry`, `conda`, or system Python for installation or execution is strictly prohibited.
+- Python commands MUST always be executed via `uv run`.
+
+## Shell Command Line Execution Rule
+
+- The environment is managed by `mise`. Follow the execution patterns defined in the `mise` skill before running commands.
+- **Avoid Compound Commands**: Avoid chaining commands with `&&`, `;`. Prefer splitting them into standalone individual commands to match auto-approval whitelists.
 
 ## Code Generation and Library Usage
 
