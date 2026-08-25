@@ -43,20 +43,26 @@ Constraints:
 ## Codebase Search and Exploration
 
 - Context7: "external truth source"
-- Serena: "internal truth source"
+- Language Server (LSP): "internal truth source"
 
-Before modifying or reasoning about existing code, the agent MUST:
+Before modifying or reasoning about existing code, the agent MUST prefer LSP-based tools over plain text search (e.g. `grep`) for code discovery, including:
+- symbols and their definitions
+- call sites and references
+- affected files and modules
 
-1. Use Serena MCP tools to discover the relevant source of truth, including:
-   - symbols and their definitions
-   - call sites and references
-   - affected files and modules
-2. Limit the working context to the minimal relevant code returned by Serena to reduce unnecessary token usage.
+Any available LSP-backed tool qualifies as the source of truth, in this priority order:
+1. A built-in multi-language LSP MCP already provided by the agent runtime.
+2. A user-installed LSP MCP (e.g. Serena, or other language-server-backed MCP tools).
+3. A directly invoked language server / editor tooling, if no LSP MCP is available.
+
+The agent MUST:
+1. Use the available LSP-based tool to discover the relevant source of truth (symbols, references, call sites, affected files).
+2. Limit the working context to the minimal relevant code returned by the LSP tool to reduce unnecessary token usage.
 3. Base all changes and conclusions on the discovered implementation, not on assumptions.
 
 Constraints:
-- Do not manually scan the repository without prior Serena-based discovery.
-- Do not modify code that has not been inspected via Serena or explicitly justified.
+- Do not manually scan the repository with plain text search before attempting LSP-based discovery.
+- Do not modify code that has not been inspected via an LSP-based tool or explicitly justified.
 
 Fallback:
-- If Serena is unavailable, the agent must state this explicitly and proceed with caution.
+- If no LSP-based tool is available, the agent must state this explicitly and proceed with caution (e.g. falling back to `grep`/text search).
