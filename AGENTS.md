@@ -16,53 +16,36 @@
 - The environment is managed by `mise`. Follow the execution patterns defined in the `mise` skill before running commands.
 - **Avoid Compound Commands**: Avoid chaining commands with `&&`, `;`. Prefer splitting them into standalone individual commands to match auto-approval whitelists.
 
-## Code Generation and Library Usage
+## Sources of Truth & Code Intelligence
 
-- Context7: "external truth source"
-- Serena: "internal truth source"
+### External Truth (Docs & APIs)
 
-When performing any of the following tasks:
-- code generation
-- setup or configuration steps
-- usage of third-party libraries or APIs
+Before generating code or config for any third-party library/API, retrieve verified,
+version-specific documentation. Never rely on model memory alone. If no verified
+source exists, explicitly flag the assumption in the response.
 
-The agent MUST:
-1. Resolve the correct library or framework identity.
-2. Retrieve up-to-date documentation using Context7 MCP tools as the primary source.
-3. Base all generated code and configuration on the retrieved documentation, not on model memory.
+Priority order (via whichever mechanism is available: MCP, skill, CLI, or built-in tool):
+1. Structured doc index — e.g. `llms.txt`, a docs MCP server, a doc-fetch skill,
+   or a `ctx7`-style CLI
+2. Package/repo-native docs — README, changelog, official repo docs, via CLI
+   (`man`, `--help`, `npm docs`) or direct file read
+3. Live web search / page fetch — for issues, error logs, or undocumented edge
+   cases, via web-search MCP, skill, or built-in browsing tool
+4. Model memory — last resort only, must be explicitly marked as unverified
 
-Fallback behavior:
-- If Context7 is unavailable or cannot resolve the library, the agent must explicitly state this and:
-  - either request clarification from the user, or
-  - proceed using best-effort knowledge while clearly marking assumptions.
+### Internal Truth (Codebase Intelligence)
 
-Constraints:
-- Do not generate code for undocumented or unverifiable APIs.
-- Do not silently assume default versions or behaviors.
+Before modifying existing code, resolve symbols, definitions, call sites, and
+architecture structurally — not via plain-text search. Pull only the minimal
+relevant context per lookup to conserve tokens, and base all edits on verified
+implementations.
 
-## Codebase Search and Exploration
-
-- Context7: "external truth source"
-- Language Server (LSP): "internal truth source"
-
-Before modifying or reasoning about existing code, the agent MUST prefer LSP-based tools over plain text search (e.g. `grep`) for code discovery, including:
-- symbols and their definitions
-- call sites and references
-- affected files and modules
-
-Any available LSP-backed tool qualifies as the source of truth, in this priority order:
-1. A built-in multi-language LSP MCP already provided by the agent runtime.
-2. A user-installed LSP MCP (e.g. Serena, or other language-server-backed MCP tools).
-3. A directly invoked language server / editor tooling, if no LSP MCP is available.
-
-The agent MUST:
-1. Use the available LSP-based tool to discover the relevant source of truth (symbols, references, call sites, affected files).
-2. Limit the working context to the minimal relevant code returned by the LSP tool to reduce unnecessary token usage.
-3. Base all changes and conclusions on the discovered implementation, not on assumptions.
-
-Constraints:
-- Do not manually scan the repository with plain text search before attempting LSP-based discovery.
-- Do not modify code that has not been inspected via an LSP-based tool or explicitly justified.
-
-Fallback:
-- If no LSP-based tool is available, the agent must state this explicitly and proceed with caution (e.g. falling back to `grep`/text search).
+Priority order (via whichever mechanism is available: built-in, LSP client, MCP,
+skill, or CLI):
+1. Editor/IDE built-in structural navigation (go-to-definition, find-references, rename)
+2. Language-server tooling — LSP client, MCP wrapper, or CLI invocation of a
+   language server
+3. Semantic codebase memory or graph tool, if configured — e.g. an MCP server
+   (Serena, Graphify) or an equivalent skill/CLI
+4. `grep` / plain-text search — fallback only, with an explicit notice that
+   structural tools were unavailable
