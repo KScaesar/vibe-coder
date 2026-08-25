@@ -208,10 +208,13 @@ func TestAdd_Normal(t *testing.T) {
   * 僅在邏輯超過 **5 行** 或多處重複時，才抽取為 helper。
   * 對於單行或簡單驗證，直接寫在測試中即可，避免不必要的抽象。
   * 為了避免過早抽象隱藏關鍵細節，在第一次撰寫或除錯測試時，建議先將邏輯攤平。只有當驗證邏輯穩定後再考慮抽取 Test Helpers。
-* 命名範例:
-  * `givenAValidUser(t *testing.T) (*User, *gomock.Controller)`
-  * `assertUserEquals(t *testing.T, expected *User, actual *User)`
-  * `whenServiceIsCalled(t *testing.T, svc Service, input Input) (Output, error)`
+* 命名規則:
+  * Helper 函式命名必須讓讀者一眼看出「這是測試輔助用途」以及「它對應 Given-When-Then 的哪個階段」，不要用 `newXxx`、`buildXxx`、`makeXxx` 這類純技術開發命名——那種命名看不出這是為了鋪陳情境、執行操作、還是驗證結果。
+  * 具體做法：命名帶上 `helper` 或 `test` 字樣標示這是測試專用，再依用途疊加 `Given`／`When`／`Then` 字樣標示它扮演的角色：
+    * 鋪陳前置條件、組出情境用的 view model／輸入資料 → `helperGivenXxx`
+    * 執行被測操作 → `helperWhenXxx` / `whenXxx`
+    * 驗證結果 → `assertXxx` / `helperThenXxx`
+  * Bad: `newTrackingCampaignView()` — 只講「產生了什麼」，看不出是 Given/When/Then 哪個階段的鋪陳。
 
 ### 3. gomock 使用實踐
 
@@ -220,7 +223,6 @@ func TestAdd_Normal(t *testing.T) {
 
 ```go
 t.Run("...", func(t *testing.T) {  
-    t.Parallel()  
     // Given  
     ctrl := gomock.NewController(t)  
     mockRepo := mocks.NewMockUserRepository(ctrl)  
