@@ -9,28 +9,40 @@ system:
   vocabulary_overrides:
     force_domain: [ad_request]
     force_technical: []
-glossary:
+vocabulary:
   - term: conversion_id
     definition: The identifier the advertiser's tracking platform returns for a conversion.
-    aliases: []
+    aliases: [conv_id, click_conv_token]
     provenance: []
     conflict_notes: >-
       click_id and conversion_id are used interchangeably in places but are not
       the same; one click can map to several conversions.
-entities:
+concepts:
   - id: ad_request
     name: Ad Request
     description: One request from the player at an ad break.
-    attributes:
+    sub_class_of: commercial_transaction
+    disjoint_with: [organic_content_request]
+    context_mappings:
+      - context: ad_decision
+        local_name: PlacementRequest
+        symbol: internal/domain/decision.Request
+      - context: traffic_routing
+        local_name: InboundPlacement
+        symbol: internal/domain/routing.Slot
+    properties:
       - name: placement
         description: Which negotiated slot the request is for.
     provenance: []
     confidence: 0.7
     human_verified: false
+events:
   - id: conversion_event
     name: Conversion Event
     description: A confirmed advertiser-side outcome attributed to a click.
-    attributes: []
+    participants: [ad_request]
+    target: ad_request
+    properties: []
     provenance: []
     confidence: 0.3
     human_verified: false
@@ -43,7 +55,7 @@ workflows:
         provenance: []
     inputs: [conversion_event]
     outputs: [conversion_event]
-business_rules:
+axioms:
   - id: cool_off_7d
     description: A user does not see the same creative again for seven days.
     condition: The same user has already been shown this creative.
@@ -52,10 +64,12 @@ business_rules:
     confidence: 0.9
     human_verified: false
     human_note: ""
-relationships:
+relations:
   - subject: ad_request
     predicate: produces
     object: conversion_event
+    inverse_of: produced_by
+    characteristics: [functional]
     description: A served request may later produce a conversion.
     provenance: []
   - subject: conversion_event

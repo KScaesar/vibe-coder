@@ -7,7 +7,7 @@
 Two tiers, because most of what makes an ontology good is a judgment call and
 there is no one right way to write code or to describe it.
 
-  error   — wrong whatever the house style: a relationship pointing at nothing,
+  error   — wrong whatever the house style: a relation pointing at nothing,
             a claim the skill's own rules say must carry an open question.
   review  — looks off, might be perfectly fine. Reported as a question for a
             person to answer, never as a verdict.
@@ -27,11 +27,19 @@ from pathlib import Path
 
 import yaml
 
-SECTIONS = ["system", "glossary", "entities", "workflows",
-            "business_rules", "relationships", "open_questions"]
+# Standard Knowledge Engineering sections with backwards-compatible aliases
+SECTION_ALIASES = {
+    "system": ["system"],
+    "vocabulary": ["vocabulary", "glossary"],
+    "concepts": ["concepts", "entities", "classes"],
+    "workflows": ["workflows", "processes"],
+    "axioms": ["axioms", "business_rules", "constraints"],
+    "relations": ["relations", "relationships", "object_properties"],
+    "open_questions": ["open_questions", "epistemic_gaps"],
+}
 
-# Storage vocabulary has its own layer. An entity attribute typed `varchar`
-# describes the column, not the concept.
+# Storage vocabulary has its own layer. A property typed `varchar`
+# describes the column, not the domain concept.
 STORAGE_TYPE_RE = re.compile(
     r"\b(bigint|smallint|integer|int[248]?|varchar|nvarchar|char|text|numeric|"
     r"decimal|float[48]?|double|real|boolean|bool|timestamp(?:tz)?|datetime|date|"
@@ -55,6 +63,13 @@ def walk_strings(node, path="$"):
         yield path, node
 
 
+def get_section(doc: dict, canonical_name: str) -> list | dict:
+    for alias in SECTION_ALIASES.get(canonical_name, [canonical_name]):
+        if alias in doc:
+            return doc[alias]
+    return []
+
+
 def check(doc: dict) -> list[dict]:
     out = []
 
@@ -62,19 +77,25 @@ def check(doc: dict) -> list[dict]:
         out.append({"id": cid, "text": text, "passed": passed,
                     "evidence": evidence, "tier": tier})
 
-    missing = [s for s in SECTIONS if s not in doc]
+    missing = [
+        canonical for canonical, aliases in SECTION_ALIASES.items()
+        if not any(alias in doc for alias in aliases)
+    ]
     record("schema.sections", "Every schema section is present",
            not missing, f"missing: {missing}" if missing else "all present")
 
-    entities = doc.get("entities") or []
-    rules = doc.get("business_rules") or []
-    workflows = doc.get("workflows") or []
-    questions = doc.get("open_questions") or []
+    concepts = get_section(doc, "concepts") or []
+    events = doc.get("events") or []
+    axioms = get_section(doc, "axioms") or []
+    workflows = get_section(doc, "workflows") or []
+    relations = get_section(doc, "relations") or []
+    vocabulary = get_section(doc, "vocabulary") or []
+    questions = get_section(doc, "open_questions") or []
 
     # A confidence score nobody acts on is decoration. The rule that makes it
     # mean something is that a low one has to surface as a question.
     referenced = {r for q in questions for r in (q.get("related_to") or [])}
-    scored = entities + rules + workflows + (doc.get("glossary") or [])
+    scored = concepts + events + axioms + workflows + vocabulary
     unbacked = [
         i.get("id") or i.get("term") for i in scored
         if isinstance(i, dict)
@@ -86,33 +107,36 @@ def check(doc: dict) -> list[dict]:
            f"Every claim below {CONFIDENCE_FLOOR} confidence has a matching open question",
            not unbacked, f"unbacked: {unbacked}" if unbacked else "none below floor, or all backed")
 
-    typed = [
-        f"{e.get('id')}.{a.get('name')}: {a.get('description', '')[:40]}"
-        for e in entities if isinstance(e, dict)
-        for a in (e.get("attributes") or []) if isinstance(a, dict)
-        if STORAGE_TYPE_RE.search(f"{a.get('name', '')} {a.get('description', '')}")
-    ]
+    typed = []
+    for c in (concepts + events):
+        if not isinstance(c, dict):
+            continue
+        props = c.get("properties") or c.get("attributes") or []
+        for p in props:
+            if isinstance(p, dict) and STORAGE_TYPE_RE.search(f"{p.get('name', '')} {p.get('description', '')}"):
+                typed.append(f"{c.get('id')}.{p.get('name')}: {p.get('description', '')[:40]}")
+
     # A word like "timestamp" or "text" reads as a column type, but it is also
     # ordinary English. Worth a look, not worth a verdict.
-    record("entities.storage_flavoured_attributes",
-           "Do these attributes describe the concept, or the column it is stored in?",
+    record("concepts.storage_flavoured_properties",
+           "Do these properties describe the concept, or the column it is stored in?",
            not typed, "; ".join(typed) if typed else "none", tier="review")
 
     leaks = [f"{p}: {v[:60]}" for p, v in walk_strings(doc) if SCANNER_LEAK_RE.search(v)]
     record("no_scanner_leak", "No scanner output appears in the ontology",
            not leaks, "; ".join(leaks[:3]) if leaks else "clean")
 
-    known = {i.get("id") for i in (entities + rules + workflows) if isinstance(i, dict)}
+    known = {i.get("id") for i in (concepts + events + axioms + workflows) if isinstance(i, dict)}
     dangling = []
-    for r in (doc.get("relationships") or []):
+    for r in relations:
         if not isinstance(r, dict):
             continue
         for end in ("subject", "object"):
             ref = r.get(end)
             if ref and ref not in known and not (r.get("description") or "").strip():
                 dangling.append(f"{r.get('subject')} -{r.get('predicate')}-> {r.get('object')} ({end})")
-    record("relationships.resolvable",
-           "Every relationship end resolves to a declared id or is described as external",
+    record("relations.resolvable",
+           "Every relation end resolves to a declared id or is described as external",
            not dangling, "; ".join(dangling[:3]) if dangling else "all resolve")
 
     # A question with no suggested answer makes the human compose one from

@@ -1,21 +1,42 @@
 # =============================================================================
-# Ontology Schema — 從程式碼萃取商業邏輯，產出人類可讀、帶來源追溯的知識層文件。
-# 設計定位是「AI 產生初稿 + 人類複核修正」，刻意不採用 OWL/RDF 等正式本體論格式，
-# 以降低每次修正的認知負擔。
+# Domain Ontology Schema Specification
 #
-# 檔名: <system.name>.ontology.yml
-# 版本資訊寫在 system.version，不要用 v1 / final / final_final 這種檔名管理。
+# 定義：依據知識工程（Knowledge Engineering）經典定義（Studer et al., 1998; Gruber, 1993），
+# 本體論（Ontology）是「對共享概念化模型的形式化、明確規範」
+# （A formal, explicit specification of a shared conceptualization）。
 #
 # -----------------------------------------------------------------------------
-# provenance 共同結構
+# 核心任務：解決 DDD 跨限界上下文（Bounded Contexts）的語意對齊與邏輯推理
+#
+# DDD 的常態是「上下文隔離（Context Autonomy）」：
+# - 同一個業務概念在不同模組可能有名稱差異（同義異名，如 Billing 叫 PayerAccount、CRM 叫 Client、Ad 叫 Advertiser）。
+# - 同一個名稱在不同模組可能有完全不同的語意與模型（異義同名，如 Order 在銷售與倉儲模組代表不同事物）。
+#
+# 本體論的核心價值在於提供「可邏輯推理的共享語意錨點（Shared Semantic Anchor）」：
+# 1. 概念等價與對齊（Semantic Equivalence & Context Mappings）：
+#    - 透過 `concepts[].context_mappings` 與 `vocabulary[].aliases` 分析出「不同名稱但同本質概念」，
+#      建立可跨模組推理的語意對齊圖譜。
+# 2. 概念階層與上下位推論（Subsumption / `sub_class_of`）：
+#    - 支援繼承與泛化推理（如 SpecialAdRequest sub_class_of AdRequest）。
+# 3. 概念互斥性檢驗（Disjointness / `disjoint_with`）：
+#    - 在開放世界假設（OWA）下，明確標記異義同名或本質衝突的概念不可重疊。
+# 4. 關係代數推理（Relational Reasoning / `inverse_of`, `characteristics`）：
+#    - 支援反向關係推導（`places` <-> `placed_by`）與傳遞性/函數性推理。
+# 5. 世界事實與因果推理（World Events）：
+#    - 記錄世界中發生的客觀事件（誰、作用對象、何時、因果），用於因果推斷與全局查詢。
+#
+# 檔名規範: <system.name>.ontology.yml
+# =============================================================================
+
 # -----------------------------------------------------------------------------
-# glossary / entities / workflows / business_rules / open_questions 都用同一種
-# 「這個資訊從哪裡來」的結構，定義統一寫在這裡，各區塊不重複。
+# provenance 共同結構（來源追溯）
+# -----------------------------------------------------------------------------
+# vocabulary / concepts / events / workflows / axioms / open_questions 共用此結構。
 #
 # provenance:
 #   - type: enum
 #     #   code | sql | document | ticket | meeting_note | dashboard | other
-#     #   other 必填 location.description；同類 other 反覆出現代表該擴充 enum。
+#     #   type=other 時必填 location.description；反覆出現之同類別應擴充 enum。
 #
 #     location: object
 #     #   type=code:         { file, symbol, lines(optional) }
@@ -28,250 +49,263 @@
 #
 #     evidence_type: enum
 #     #   lsp | tree-sitter | ast-grep | text-scan | comment | human
-#     #
-#     #   這個 enum 混了兩種東西:前四個是「用什麼工具取得」,後兩個是
-#     #   「這是哪一類證據」。同一筆來源常常兩邊都成立——註解也是 tree-sitter
-#     #   解析出來的。填寫優先序:human > comment > 實際使用的工具。
-#     #   語義來源比工具重要,因為讀的人想知道的是「這句話憑什麼」,
-#     #   不是「誰把它撈出來的」。
-#     #
-#     #   純粹記錄,不參與 confidence 計算。工具精確度與語義確定性是兩個獨立的軸:
-#     #   一個 text-scan 找到的 config key,若對得上外部規格,證據強度可以高於
-#     #   一個 LSP 確認的內部 helper。把兩者相乘會系統性低估外部契約類證據。
-#     #
-#     #   comment 的取捨規則寫在 SKILL.md,此處不重複。
+#     #   記錄證據類型與提取工具。填寫優先序: human > comment > 實際工具。
+#     #   純記錄來源事實，不參與 confidence 之數學運算。
 #
 #     note: string   # 補充說明，可留空
 #
-# 範例:
-#   provenance:
-#     - type: code
-#       location: { file: "internal/domain/decision.go", symbol: "Pick", lines: "18-26" }
-#       evidence_type: tree-sitter
-#       note: ""
-#     - type: ticket
-#       location: { system: "Jira", id: "ADX-482" }
-#       evidence_type: human
-#       note: "頻次上限的原始需求討論"
-#
 # -----------------------------------------------------------------------------
-# review 共同結構
+# review 共同結構（複核狀態）
 # -----------------------------------------------------------------------------
-# glossary / entities / workflows / business_rules 共用同一組複核欄位,
-# 定義統一寫在這裡,各區塊不重複。
+# vocabulary / concepts / events / workflows / axioms 共用複核欄位。
 #
 #   confidence: float
-#   #   AI 對「這條敘述成立」的信心,錨定證據種類,見 SKILL.md 的評分表。
-#   #   不代表業務正確性,只用於排定複核順序。預期值: 0.0 ~ 1.0
-#   #   低於 0.5 必須同時產生一則 open_questions。
+#   #   語意確定性評分（0.0 ~ 1.0），錨定客觀證據等級（見 SKILL.md）。
+#   #   低於 0.5 必須在 open_questions 中建立對應條目。
 #
 #   human_verified: bool
-#   #   是否經人工確認。初始一律 false。
+#   #   是否經領域專家或工程師人工驗證。初始一律為 false。
 #
 #   human_note: string
-#   #   人工補充或修正寫在此處,不要覆蓋原本的 description——
-#   #   保留錯誤的第一次推論,之後有人問「為什麼這個欄位這樣命名」時會用得上。
-#   #   可留空字串。
-#
+#   #   人工補充或修正說明。請保留原始推論內容，勿直接覆蓋。
 # -----------------------------------------------------------------------------
-# 行號錨點注意事項:
-#   lines 一次 commit 就會失效，symbol 才是穩定錨點。lines 只當輔助提示。
-#   system.commit_sha 記錄抽取當下的版本，讓過期座標至少可被追回。
-# =============================================================================
 
 system:
-  # 這個 ontology 描述哪個系統。重新抽取時沿用同一個 name 以便比對差異。
-  # 預期值: kebab-case，例如 "ssai-ad-decision"
+  # 本體論所屬系統識別碼。預期值: kebab-case，例如 "ssai-ad-decision"
   name: string
 
-  # 業務領域，用於多份 ontology 的分類。預期值: kebab-case
+  # 業務領域分類標籤。預期值: kebab-case，例如 "advertising"、"e-commerce"
   domain: string
 
-  # 一到三句話說明這個系統在業務上做什麼，寫給看得懂業務、看不懂 code 的人。
+  # 系統核心業務本質與範圍說明（1~3 句話，以領域語言撰寫）。
   description: string
 
-  # 文件版本，欄位增刪或大量規則變動時遞增。預期值: "1.0"、"1.1"
+  # 本體論規格版本。預期值: "1.0"、"1.1"
   version: string
 
-  # 抽取當下的 commit SHA。provenance 的行號會隨 commit 失效，
-  # 有這個值才能回推當時的程式碼狀態。
-  # 預期值: 完整或短 SHA 字串
+  # 抽取時錨定之 Git Commit SHA（用於確保代碼符號座標之可溯性）。
   commit_sha: string
 
-  # 產生/最後更新時間。預期值: ISO 8601，例如 "2026-08-28T10:00:00Z"
+  # 本體論產生或最後更新時間戳記。預期值: ISO 8601，例如 "2026-08-28T10:00:00Z"
   generated_at: timestamp
 
-  # 複核狀態，讓下游知道能信任到什麼程度。
-  #   draft          = AI 剛產生，無人看過
-  #   human_reviewed = 工程師看過並修正明顯錯誤
-  #   verified       = 業務負責人確認語意正確
+  # 知識層複核狀態:
+  #   draft          = 初稿，由 AI 自動抽取完成
+  #   human_reviewed = 已由軟體工程師核對代碼與符號結構
+  #   verified       = 已由領域專家（Domain Expert）確認業務語意無誤
   review_status: enum
 
-  # 停用詞覆寫。掃描階段預設對 request / handler / payload 這類基礎架構詞降權，
-  # 但在特定領域它們就是核心概念——廣告系統的 ad request 是 domain entity 而非水管。
-  # 在這裡宣告例外，讓降權不會誤殺該系統最重要的實體。
+  # 領域專屬停用詞覆寫。防止通用基礎設施停用詞誤殺領域關鍵概念（如廣告領域之 ad_request）。
   vocabulary_overrides:
-    # 強制視為領域詞彙，取消降權
-    force_domain: [string]
-    # 強制視為技術產物，額外降權
-    force_technical: [string]
+    force_domain: [string]      # 強制納入領域概念（取消停用詞降權）
+    force_technical: [string]   # 強制視為技術實作產物（額外降權排除）
 
 
 # -----------------------------------------------------------------------------
-# glossary — 術語表。投資報酬率最高的區塊。legacy code 的主要困難不是看不懂
-# function，而是同一個概念在不同地方有不同名字。
+# vocabulary — 受治理的詞彙表（Governed Vocabulary / Lexicon）。
+# 語意對齊核心：記錄代碼中同義異名（Aliases）與跨限界上下文的語意分歧（Conflict Notes）。
 # -----------------------------------------------------------------------------
-glossary:
+vocabulary:
   - term: string
-    # 業務上的真正定義，用完整句子寫，不要只做同義詞替換。
+    # 規範性術語名稱。
+
     definition: string
+    # 術語的精確業務定義（以完整陳述句表達，嚴禁僅做同義詞替換）。
 
-    # 程式碼中實際被當成同一概念使用的其他名稱。可為空陣列。
     aliases: [string]
+    # 代碼中實際使用的同義詞、縮寫或別名清單（解決跨上下文之同義異名）。
 
     provenance: [provenance_object]
 
-    # 語意分歧或爭議記錄在此。不要挑一個當標準蓋掉分歧——分歧本身就是發現。
-    # 可留空字串。
     conflict_notes: string
+    # 語意分歧與衝突記錄（例如同名術語在不同上下文代表不同概念）。
+    # 嚴禁隨意挑選單一標準抹平分歧——分歧本身即是領域邊界的重要發現。
 
-    # 見上方「review 共同結構」。
     confidence: float
     human_verified: bool
     human_note: string
 
 
 # -----------------------------------------------------------------------------
-# entities — 業務概念，不是資料庫 table。關心「這是什麼」而非「怎麼儲存」。
+# concepts — 領域概念與類別（Concepts / Classes / TBox）。
+# 代表領域中的一等概念。具備階層繼承（sub_class_of）、互斥公理（disjoint_with）
+# 與跨限界上下文映射（context_mappings），支援「不同名字但同一意義」之邏輯推理。
 # -----------------------------------------------------------------------------
-entities:
+concepts:
   - id: string
-    # 穩定識別碼，供 relationships / business_rules 引用。
-    # 改名會讓所有引用斷掉，設定後盡量不動。預期值: snake_case
+    # 穩定概念識別碼（snake_case），供 relations / workflows / axioms / events 引用。
 
-    name: string        # 顯示名稱
-    description: string # 這個概念是什麼，一到兩句，寫本質不寫實作
+    name: string
+    # 概念的人類可讀標籤（Human-readable label）。
 
-    attributes:
+    description: string
+    # 概念的本質定義與語意範疇（1~2 句話，專注業務本質，不描述實作細節）。
+
+    # 上位概念識別碼（Taxonomy / SubClassOf），支援邏輯繼承與演繹推論。可省略。
+    sub_class_of: string
+
+    # 互斥概念 ID 清單（DisjointClasses），在 OWA 下宣告不可同時成立之概念。可省略。
+    disjoint_with: [concept_id]
+
+    # 跨限界上下文映射：分析並記錄此本質概念在不同業務子領域/限界上下文中的名稱與代碼符號（同義異名對齊）
+    # 注意：只填寫業務限界上下文（如 "billing", "crm", "settlement", "ad_decision"）；嚴禁填入技術分層（"api", "storage", "dto"）
+    context_mappings:
+      - context: string       # 業務限界上下文名稱（例如 "billing", "crm", "ad_decision"）
+        local_name: string    # 該上下文中的本機領域名稱（例如 "PayerAccount", "Client", "PlacementRequest"）
+        symbol: string        # 代碼對應符號（例如 "internal/domain/billing.Account"）
+
+    properties:
       - name: string
-        # 只列業務上重要的屬性，不是 struct 欄位清單的搬運。
+        # 數據屬性名稱（Data Property）。
+
         description: string
-        # 不放 bigint / varchar 這類儲存型別，那屬於 metadata layer。
+        # 數據屬性的業務語意與取值意涵（嚴禁填入 varchar, bigint 等實體儲存型別）。
 
     provenance: [provenance_object]
 
-    # 見上方「review 共同結構」。
     confidence: float
     human_verified: bool
     human_note: string
 
 
 # -----------------------------------------------------------------------------
-# workflows — 業務流程。legacy code 的價值通常藏在這裡:function 清單說明
-# 「程式做了什麼」，workflow 才說明「為什麼這樣做」。
+# events — 世界事實與事件型態（World Events / Occurrences）。
+# 描述領域中在特定時間或時段發生過的客觀事實。
+# 核心重點：關注參與者（participants）、作用對象（target）、時間特性與因果關係，
+# 用於跨系統知識圖譜構建、因果分析與時間軸查詢（回答「世界裡發生了什麼」）。
+# -----------------------------------------------------------------------------
+events:
+  - id: string
+    # 事件型態識別碼（snake_case，例如 "ad_impression", "conversion_recorded", "order_placed"）。
+
+    name: string
+    # 事件顯示名稱。
+
+    description: string
+    # 描述世界中發生了什麼客觀事實。
+
+    participants: [concept_id]
+    # 參與該事件的核心主體/概念（引用 concepts[].id，如 [user, advertiser]）。
+
+    target: concept_id
+    # 受事件作用或影響的目標資產/概念（引用 concepts[].id，如 ad_creative, order）。
+
+    properties:
+      - name: string
+        # 事件發生時所捕捉的度量或數據特徵（如 bid_price, latency_ms, settlement_amount）。
+        description: string
+
+    provenance: [provenance_object]
+
+    confidence: float
+    human_verified: bool
+    human_note: string
+
+
+# -----------------------------------------------------------------------------
+# workflows — 業務流程與運作過程（Workflows & Operational Processes）。
+# 描述領域中因果相扣的巨觀運作流程與狀態推進，回答「業務如何運轉」。
 # -----------------------------------------------------------------------------
 workflows:
   - id: string
-    name: string
+    # 流程識別碼（snake_case）。
 
-    # 什麼事件啟動這個流程，用業務語言描述。
+    name: string
+    # 流程名稱。
+
     trigger: string
+    # 啟動該流程的業務事件或前置條件（以領域事件語言描述）。
 
     steps:
       - description: string
-        # 這一步在業務上做了什麼。不要逐行改寫程式碼。
-        # 檢驗標準:不懂這個語言的人看得懂嗎?看不懂就重寫。
+        # 步驟的業務行為說明。
         provenance: [provenance_object]
 
-    # 預期值: entities[].id 陣列，引用的 id 必須存在
-    inputs: [entity_id]
-    outputs: [entity_id]
+    # 流程之輸入與輸出概念 ID 清單（必須存在於 concepts[].id 或 events[].id）
+    inputs: [concept_id]
+    outputs: [concept_id]
 
-    # 見上方「review 共同結構」。
     confidence: float
     human_verified: bool
     human_note: string
 
 
 # -----------------------------------------------------------------------------
-# business_rules — 最容易推論錯誤的區塊。魔術數字與隱含條件背後的業務意圖，
-# 程式碼本身不會記錄，高度依賴人工補充。
+# axioms — 業務約束與公理（Axioms & Domain Constraints）。
+# 記錄領域內必然成立的公理性規則：基數約束（Cardinality）、可選性（Optionality）、
+# 有效性條件（Validity conditions）、分類公理（Classification rules）與存取政策。
 # -----------------------------------------------------------------------------
-business_rules:
+axioms:
   - id: string
+    # 公理/約束識別碼（snake_case）。
+
     description: string
+    # 業務約束或公理的完整敘述。
 
-    # 觸發條件的業務意義，例如「使用者對同一素材的曝光次數達到上限」
     condition: string
+    # 觸發或適用的業務前置條件（例如「使用者對同一廣告素材之曝光次數達上限」）。
 
-    # 條件成立時系統做什麼，例如「將該素材排除於候選之外」
     action: string
+    # 條件成立時所強制執行的約束後果或狀態轉變（例如「將該素材自候選集合中剔除」）。
 
     provenance: [provenance_object]
 
-    # 見上方「review 共同結構」。
     confidence: float
     human_verified: bool
     human_note: string
 
 
 # -----------------------------------------------------------------------------
-# relationships — 概念之間的關聯。在 entities 與 workflows 穩定後才建立。
-# 採開放式 triple（subject-predicate-object），不設封閉 enum：
-# 業務關係的說法本來就因領域而異（"places" 對電商比 "owns" 精準），
-# 硬塞進固定列舉只會逼人選一個詞不達意的近似值。
-# 代價是同義詞可能發散（owns/has/belongs_to 各寫各的），
-# 靠 glossary 與複核（review_status）收斂用詞，而不是靠 schema 硬性約束。
+# relations — 聲明對象關係（Declared Object Properties / Relations）。
+# 採開放式語意三元組（Subject - Predicate - Object），支援反向關係（inverse_of）
+# 與代數特徵（characteristics），使機器可自動進行關係導向的邏輯推論。
 # -----------------------------------------------------------------------------
-relationships:
+relations:
   - subject: string
-    # 主體。可引用 entities[].id，也可引用 workflows[].id 或 business_rules[].id——
-    # 關係不必只發生在 entity 與 entity 之間。
-    # 若引用對象不存在於任何一個清單中，視為外部概念，description 需說明是什麼。
+    # 主體概念 ID（引用 concepts[].id、events[].id、workflows[].id 或 axioms[].id）。
+    # 若為外部系統或跨領域概念，需於 description 中明確說明。
 
     predicate: string
-    # 自由動詞（謂語），寫業務語言而非硬套列舉，例如:
-    #   "places"（User places Order）、"triggers"、"depends_on"、
-    #   "produces"、"consumes"、"aliases"、"implemented_by"（見下方說明）
-    # implemented_by 用來回答「這個業務概念實際上是誰在管」，
-    # 程式碼座標寫在 provenance，不要在這裡另開一套欄位，
-    # 否則同樣資訊有兩處可寫，必然不同步。
-    #
-    # 同一份 ontology 內，同義詞（owns/has/belongs_to）應收斂成同一個 predicate 值；
-    # 若發現同一種關係在不同地方用了不同的詞，記錄到 glossary 或 conflict_notes，
-    # 而不是放任兩種寫法並存。
+    # 業務語意動詞謂詞。例如:
+    #   "places" (Customer places Order), "settles", "contains", "depends_on", "implemented_by"
+    # implemented_by 用於將業務概念錨定至實作之服務/函數（代碼座標記入 provenance）。
 
     object: string
-    # 客體。引用來源同 subject。
+    # 客體概念 ID（引用來源同 subject）。
+
+    # 反向關係謂詞名稱（例如 "places" 的反向是 "placed_by"），支援自動雙向推論。可留空。
+    inverse_of: string
+
+    # 關係之代數特徵（支援 transitive, symmetric, functional, inverse_functional）。可留空。
+    characteristics: [enum]
 
     description: string
+    # 關係的語意意圖與業務關聯說明。
+
     provenance: [provenance_object]
 
 
 # -----------------------------------------------------------------------------
-# open_questions — 抽取過程中無法確定、需要人判斷的地方。
-# 風險控管最重要的區塊:目的是強迫「不知道」被寫下來，
-# 而不是被看似合理的推論悄悄填滿。
+# open_questions — 認識論缺口與待決問題（Epistemic Gaps & Ambiguities）。
+# 在開放世界假設（OWA）下，明確標記代碼未載明之未知項、低信心推論與未決爭議。
 # -----------------------------------------------------------------------------
 open_questions:
   - id: string
-    # 穩定識別碼,讓多輪對話可以指名「第幾題」而不必重述整段。
-    # 預期值: snake_case,例如 "q_click_id_cardinality"
+    # 待決問題識別碼（snake_case，例如 "q_attribution_model_window"）。
 
     question: string
-    # 具體問題，例如「click_id 是否等同於 transaction_id?」
+    # 具體待澄清之領域語意問題。
 
-    # 預期值: entities[].id 或 business_rules[].id 陣列
-    related_to: [entity_id | rule_id]
+    related_to: [concept_id | axiom_id | event_id]
+    # 關聯的概念、公理或事件 ID 清單。
 
     provenance: [provenance_object]
 
-    # 分級，用於排定處理順序:
-    #   P0 = 阻斷型。核心實體識別衝突或關鍵狀態流向未知，領域模型無法成立。
-    #   P1 = 可假設型。有合理的商業預設值，附上推論依據供人確認即可繼續。
-    #   P2 = 邊緣分支。歷史遺留的特殊常數或防禦性回退，不影響主要理解。
-    severity: enum   # P0 | P1 | P2
+    severity: enum
+    # 優先級分級:
+    #   P0 = 阻斷型（Blocking）：核心概念或關係語意不明，本體模型無法成立。
+    #   P1 = 可假設型（Assumable）：具合理業務預設推論，需專家確認後生效。
+    #   P2 = 邊緣型（Marginal）：歷史遺留常數或邊緣防禦邏輯，不影響主要領域理解。
 
-    # AI 建議的預設答案。附上這個，人類多數時候只要確認而不必從零回答。
-    # 未經確認前不得填入正文。
     proposed_default: string
+    # AI 建議之預設答案與推論理由（減輕專家從零撰寫負擔；未經確認前嚴禁填入正式內容）。

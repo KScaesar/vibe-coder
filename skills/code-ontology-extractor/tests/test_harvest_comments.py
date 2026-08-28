@@ -2,7 +2,7 @@
 
 The harvester's value is entirely in its precision. SKILL.md tells the reader
 to open the `conflict` bucket before anything else and to feed it straight
-into glossary[].conflict_notes, so a false positive there is not noise the
+into vocabulary[].conflict_notes, so a false positive there is not noise the
 reader filters out later -- it lands in the ontology. These tests exist to
 keep that bucket honest, and to pin the length heuristic that decides what
 counts as a rationale.
@@ -70,7 +70,7 @@ def test_conflict_is_tagged_when_two_names_are_put_in_opposition(src):
 def test_contrastive_prose_alone_is_not_a_naming_conflict(src):
     assert "conflict" not in tags_of(src), (
         "a contrastive connective with no pair of names behind it is ordinary "
-        "prose; tagging it pollutes glossary[].conflict_notes"
+        "prose; tagging it pollutes vocabulary[].conflict_notes"
     )
 
 
@@ -88,10 +88,10 @@ def test_a_single_name_is_not_enough_for_a_weak_marker():
 
 def test_names_elsewhere_in_the_block_do_not_corroborate_a_weak_marker():
     # Verbatim from references/ontology-schema.yml, which survived the
-    # two-tier rule because `business_rules` and `snake_case` sit in
+    # two-tier rule because `axioms` and `snake_case` sit in
     # neighbouring sentences. Neither is being contrasted with anything.
     src = (
-        "// 穩定識別碼，供 relationships / business_rules 引用。\n"
+        "// 穩定識別碼，供 relations / axioms 引用。\n"
         "// 改名會讓所有引用斷掉，設定後盡量不動。預期值: snake_case\n"
         "var x = 1\n"
     )

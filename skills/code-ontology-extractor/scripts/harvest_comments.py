@@ -77,7 +77,7 @@ BOILERPLATE_RE = re.compile(
 )
 
 # Explicit statements that two names are not interchangeable. These go
-# straight into glossary[].conflict_notes and are the single highest-value
+# straight into vocabulary[].conflict_notes and are the single highest-value
 # comment category the harvester finds — which is exactly why precision
 # matters more here than anywhere else in this file. A false positive is not
 # noise the reader skims past; it lands in the ontology.
@@ -120,7 +120,7 @@ MIN_NAMES_FOR_WEAK_CONFLICT = 2
 
 # Corroboration has to be local. Names scattered elsewhere in a long block say
 # nothing about the sentence carrying the marker: a paragraph that mentions
-# `business_rules` and `snake_case` in passing does not turn "改名會讓所有引用
+# `axioms` and `snake_case` in passing does not turn "改名會讓所有引用
 # 斷掉" into a naming conflict. Requiring marker and names in one sentence is
 # what distinguishes a claim about two names from prose that merely contains
 # names.

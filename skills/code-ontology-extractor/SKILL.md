@@ -1,353 +1,281 @@
 ---
 name: code-ontology-extractor
-description: Extract business logic from a codebase and express it as a domain ontology in YAML — entities, workflows, business rules, relationships, and explicitly tracked open questions. Use this whenever the user wants to understand what a system does in business terms rather than technical terms, asks to reverse-engineer or document legacy code, wants a domain model or glossary derived from source, needs to onboard onto an unfamiliar codebase, asks what business rules are buried in some code, or mentions ontology, domain knowledge extraction, or building a knowledge graph from code — even if they don't name a specific output format.
+description: Extract business logic from a codebase and express it as a domain ontology in YAML and Markdown — concepts, events, declared relations, axioms & constraints, workflows, governed vocabulary, cross-context alignment, and explicitly tracked open questions. Use this whenever the user wants to understand what a system does in business terms rather than technical terms, asks to reverse-engineer or document legacy code, wants a domain model or vocabulary derived from source, needs to onboard onto an unfamiliar codebase, asks what business rules are buried in some code, or mentions ontology, domain knowledge extraction, or building a knowledge graph from code — even if they don't name a specific output format.
 disable-model-invocation: true
 ---
 
 # Code → Domain Ontology Extractor
 
-## What this is not
+## 1. Core Mission: Semantic Disambiguation & Cross-Context Alignment
 
-Not a code summarizer. A summary says what a function does. An ontology says what concepts the system believes exist.
+In complex software systems (especially legacy or microservice architectures), different packages, services, or **Bounded Contexts (限界上下文)** naturally diverge in terminology:
+- **Different Names, Same Meaning (同義異名)**: Billing calls it `PayerAccount`, CRM calls it `Client`, Ad Delivery calls it `Advertiser`.
+- **Same Name, Different Meaning (異義同名)**: The word `Order` in the Sales Context represents a customer purchasing intent; in the Warehouse Context it represents a shipping fulfillment ticket.
 
-| Code summary | Ontology extraction |
-|---|---|
-| what a function does | what concepts exist |
-| module structure | domain entities |
-| API input/output | business workflows |
-| if statement | business rule |
+### The Purpose of Ontology in this System
+According to formal Knowledge Engineering standards (Studer et al., 1998; Gruber, 1993; W3C OWL 2), an **Ontology** (本體論) is:
+> **"A formal, explicit specification of a shared conceptualization."**
+> （對共享概念化模型的形式化、明確規範）
 
-The task is translating **implementation language** into **business concept language**. The dominant failure mode is mistaking implementation detail for business meaning, and most of this skill exists to prevent that.
+An Enterprise Ontology does not force every microservice to abandon its local ubiquitous language; rather, it provides a **machine-interpretable shared semantic anchor** and **logical reasoning framework** under the **Open World Assumption (OWA)**:
+1. **Deduce Equivalence across Contexts (同義異名推論)**: Map divergent local identifiers across contexts (`concepts[].context_mappings` & `vocabulary[].aliases`) to a single canonical concept, allowing AI and downstream tools to reason that `Billing.Account` and `CRM.Client` represent the same core concept.
+2. **Disambiguate Homonyms (異義同名消歧)**: Model distinct concepts with `disjoint_with` and document contextual boundaries in `vocabulary[].conflict_notes`.
+3. **Taxonomic & Relational Reasoning (階層與關係推理)**:
+   - *Subsumption* (`sub_class_of`): Automatic inheritance of axioms and constraints (e.g. `SpecialAdRequest sub_class_of AdRequest`).
+   - *Inverse & Transitive Relations* (`inverse_of`, `characteristics: [transitive, functional]`): Automatic bidirectional relationship inference (`places` $\iff$ `placed_by`).
+4. **Open World Assumption (OWA) & Epistemic Tracking**: Unobserved code branches are treated as *unknown* rather than *false*, surfaced cleanly via `open_questions`.
 
-The second failure mode is filling gaps with plausible invention. A sparse ontology with honest gaps is more useful than a complete-looking one with invented edges.
+---
 
-## Output
+## 2. The Core Knowledge Components
 
-Write `<system-name>.ontology.yml` following `references/ontology-schema.yml`. **Read that schema before producing output** — it defines every field's purpose and expected values.
+Every extracted domain ontology captures these essential knowledge components:
+1. **Concepts / Classes (概念與類別, TBox)**: First-class business subjects, operational assets, agreements, and governed resources (e.g. `Customer`, `Order`, `AdCreative`, `Settlement`). (Represented as `concepts` in schema; *never call them `entities`*).
+   - `sub_class_of`: Parent concept for taxonomic reasoning.
+   - `disjoint_with`: Mutually exclusive concepts for consistency checking.
+   - `context_mappings`: Local name & symbol projections across Bounded Contexts.
+2. **Data Properties (數據屬性)**: Characteristics and value constraints associated with a concept (e.g. `placement`, `creationTimestamp`). Excludes physical database storage types. (Represented as `concepts[].properties`).
+3. **Declared Object Properties / Relations (聲明對象關係)**: Intentional, directed semantic connections between concepts (`Subject - Predicate - Object`), supporting `inverse_of` and `characteristics`. (Represented as `relations`).
+4. **World Events & Occurrences (世界事實與事件型態)**: Structured records of occurrences in the world (e.g. `AdImpression`, `ConversionRecorded`, `DeliveryDelayed`), capturing participants, targets, temporal aspect, and causality for knowledge querying. (Represented as `events`).
+5. **Axioms & Domain Constraints (公理與約束)**: Formal logical assertions and invariant rules that necessarily hold in the domain:
+   - *Cardinality*: Quantity bounds on relationships (e.g. `Order` contains $\ge 1$ `OrderItem`).
+   - *Optionality*: Mandatory vs. conditional existence (e.g. `createdAt` mandatory; `cancelledAt` conditional).
+   - *Validity Conditions*: Semantic validity boundaries (e.g. `amount >= 0`, `discount <= 0.85`).
+   - *Classification Axioms*: Logical rules classifying instances into defined categories (e.g. `VIPCustomer` if spend $> 1M$).
+   - *Access Restrictions*: Domain operational boundaries on read/write actions.
+   (Represented as `axioms`).
+6. **Governed Vocabulary / Lexicon (受治理詞彙)**: Single source of semantic truth, unifying canonical terms, recording aliases, and documenting cross-module semantic divergences (`conflict_notes`). (Represented as `vocabulary`).
+7. **Workflows & Operational Processes (業務流程與運作過程)**: Structured causal sequences of operations and world events describing how the domain operates. (Represented as `workflows`).
+8. **Epistemic Gap Tracking (認知缺口追蹤)**: Explicit tracking of unconfirmed inferences, low-confidence assumptions, and code/comment contradictions. (Represented as `open_questions`).
+
+---
+
+## 3. Boundary: Semantic Model (Ontology) vs. Behavioral Model (Code / DDD)
+
+| Ontology (Semantic Layer) | Code / DDD (Behavioral Layer) | Boundary & Distinction |
+|---|---|---|
+| **Concept / Class** | **Entity / Value Object** | Concept is a semantic category. Software Entity has identity, lifecycle, and **active behavior** (`order.cancel()`). |
+| **Declared Relation** | **Association / Reference** | Declared Relation is a semantic triple (`places`, `settles`); code references are bound to aggregate root transactions. |
+| **Axiom / Constraint** | **Invariant** | Axiom declares domain logic/meaning; Invariant is enforced by application code inside transaction boundaries. |
+| **World Event (世界事實)** | **Domain Event (領域事件)** | **Ontology Event** records what happened in the world (participants, temporal, causality) for knowledge querying; **DDD Domain Event** is a signal the software system **must actively react to** (workflow triggers). |
+| **Vocabulary / Namespace** | **Bounded Context** | **Ontology** establishes mapped, cross-context shared semantics; **DDD** maintains isolated local models per Bounded Context. |
+
+---
+
+## 4. Output Deliverables & Format
+
+Extraction produces **two paired deliverables**:
+1. **Machine-Readable Knowledge Base**: `<system-name>.ontology.yml`  
+   Strictly adheres to `references/ontology-schema.yml`. Defines the formal conceptualization and logic.
+2. **Human-Readable Ontology Report**: `<system-name>.ontology.md`  
+   Rendered from the finalized YAML according to `references/ontology-report-template.md`. Contains Mermaid semantic graphs, scalable bullet-list cross-context alignment, concepts, relations, events, axioms, workflows, and epistemic gaps.
 
 Never generate the whole ontology in one pass. Work through the four passes below, stopping at the two mandatory breakpoints.
 
-## Bundled resources
+## Bundled Resources & CLI Reference
 
-| Path | When to use it |
-|---|---|
-| `references/ontology-schema.yml` | The output format. See *Output* above. |
-| `scripts/inventory.py` | Run in Pass A. Executed, never read into context. |
-| `scripts/harvest_comments.py` | Run in Pass A, read in Pass B and C. Extracts and tags comments. |
-| `scripts/rules/*.yml` + `sgconfig.yml` | Passed to `ast-grep` in Pass C. Executed, never read into context. |
+| Resource | Purpose | Invocation & Flags |
+|---|---|---|
+| `references/ontology-schema.yml` | Output schema specification for `<system>.ontology.yml`. | Read before producing YAML knowledge bases. |
+| `references/ontology-report-template.md` | Template guide for `<system>.ontology.md` report. | Read before rendering Markdown reports. |
+| `scripts/inventory.py` | Pass A AST & text cross-layer symbol inventory. | `uv run scripts/inventory.py <repo> [--json out.json] [--top 60] [--min-layers 1]` |
+| `scripts/harvest_comments.py` | Pass A/B/C comment extractor & classifier. | `uv run scripts/harvest_comments.py <repo> [--json out.json] [--kind conflict] [--top 40]` |
+| `scripts/rules/*.yml` + `sgconfig.yml` | Pass C structural AST rules for magic numbers & fallbacks. | `ast-grep scan -c scripts/sgconfig.yml <repo> [--json]` |
+| `evals/validate_ontology.py` | Two-tier structural & semantic ontology validator. | `uv run evals/validate_ontology.py <file.ontology.yml> [--json out.json]` |
 
-`tests/`, `scripts/rule-tests/` and `evals/` are for maintaining this skill, not for running it — see *Keeping the scanners honest*. Add a rule file when a new detection pattern proves useful; the rule set is meant to accumulate across projects rather than live inside the scanner.
+### Detailed Script Parameters:
 
-## Comments are primary evidence
+#### 1. `scripts/inventory.py`
+- `<repo>` *(positional, required)*: Root path of the codebase to scan.
+- `--json <path>`: Write complete candidate inventory (with metrics, layer counts, evidence) to a JSON file.
+- `--top <N>` *(default: 60)*: Number of top-ranked candidates to print to stdout.
+- `--min-layers <N>` *(default: 1)*: Filter candidates to only those spanning $\ge N$ architectural layers (`api`, `domain`, `storage`, `config`, `logic`). Use `--min-layers 2` or `3` to eliminate single-file local variables.
 
-Code states what happens. Comments state why. An ontology needs the why, so comments are not decoration here — they are frequently the only written record of a domain decision, and the single richest input this skill has.
+#### 2. `scripts/harvest_comments.py`
+- `<repo>` *(positional, required)*: Root path of the codebase to scan.
+- `--json <path>`: Write structured harvested comments to a JSON file.
+- `--kind <tag>`: Filter comments by semantic tag:
+  - `conflict`: Naming collisions and cross-context disagreements (feed to `vocabulary[].conflict_notes`).
+  - `rationale`: Domain rules and business logic rationale (feed to `axioms`).
+  - `doc`: Concept definitions attached to declarations (feed to `concepts[].description`).
+  - `flag`: TODO, FIXME, warning notes, and known edge constraints.
+- `--top <N>` *(default: 40)*: Number of comments to display in stdout.
+- `--include-noise`: Include boilerplate headers, linter pragmas, and commented-out code.
+- `--min-doc-lines <N>` *(default: 5)*: Doc comment line count threshold promoted to `rationale`.
+- `--min-doc-chars <N>` *(default: 100)*: Character count threshold floor/rescue for dense comments (e.g. CJK prose).
+
+#### 3. `evals/validate_ontology.py`
+- `<file.ontology.yml>` *(positional, required)*: Path to the ontology YAML file.
+- `--json <path>`: Write detailed check results (error tier and human review tier) to JSON.
+
+`tests/`, `scripts/rule-tests/` and `evals/` are for maintaining this skill — see *Keeping the scanners honest*.
+
+---
+
+## 5. Comments Are Primary Evidence
+
+Code states what happens. Comments state why. An ontology needs the why, so comments are frequently the only written record of a domain decision.
 
 ```bash
 uv run scripts/harvest_comments.py <repo> --json comments.json
 uv run scripts/harvest_comments.py <repo> --kind conflict   # read these first
 ```
 
-The harvester merges consecutive line comments into one block before tagging, because a multi-line explanation is one artifact — tagging each `//` line separately shreds the most valuable thing in the file. Tags are multi-label, since one comment is often a doc comment, a naming warning, and a billing rule at once.
-
 | Tag | Why it matters |
 |---|---|
-| `conflict` | States that two names are not interchangeable. Goes straight to `glossary[].conflict_notes`. Read these before anything else. Deliberately narrow: a contrastive phrase like "rather than" only counts when two identifier-shaped names sit in the same sentence, because this bucket is trusted on sight. |
-| `doc` | Attached to a declaration, so it names and defines a concept. Primary source for `entities[].description`. |
-| `rationale` | Sits beside a constant or branch, reads as explanation, or is a substantial doc block (see below). Primary source for `business_rules[].description`. |
-| `flag` | TODO / FIXME / 注意 / 待確認. Often records a known business constraint or a deliberate deviation someone had to justify. |
+| `conflict` | States that two names are not interchangeable or carry different meanings across contexts. Goes straight to `vocabulary[].conflict_notes`. Read these first. |
+| `doc` | Attached to a declaration; primary source for `concepts[].description` and `events[].description`. |
+| `rationale` | Sits beside a constant or branch, explaining domain rules or business rationale. Primary source for `axioms[].description`. |
+| `flag` | TODO / FIXME / 注意 / 待確認. Often records a known business constraint or deliberate deviation. |
 | `boilerplate`, `commented_code` | Filtered out by default. |
 
-**Length above a declaration is itself a signal.** A doc comment longer than 5 lines is tagged `rationale` automatically, no keyword required. Nobody writes five lines above a declaration to restate what the declaration already says; the effort means someone judged the concept worth explaining. This catches teams whose convention is a prose block above every type — exactly the case keyword matching misses, because a good explanation often contains no marker words at all.
+**Length rule**: A doc comment longer than 5 lines is tagged `rationale` automatically. Lines are language-neutral; characters provide auxiliary floor and rescue checks.
 
-**Line count decides; character count adjusts the edges.** Lines are the primary test because they are language-neutral. Characters serve two auxiliary roles:
-
-- **floor** — six lines of `// a`, `// b` is padding, not an explanation. A comment clearing the line threshold but falling under `min-doc-lines × 8` characters is rejected.
-- **rescue** — three lines of solid prose is an explanation. A comment under the line threshold but over `--min-doc-chars` is accepted.
-
-Because the primary test is language-neutral, cross-language tuning matters less than it would if characters drove the decision. Only the rescue path is language-sensitive.
-
-**A comment is strong evidence of intent and weak evidence of current behaviour.** Comments drift from the code they describe. Where a comment contradicts the code, that contradiction is a finding: raise it as an open question rather than choosing a side. A stale comment still tells you what the system was once meant to do, which is often exactly the business rule you are looking for.
-
-Set `provenance.evidence_type: comment` for anything sourced this way, so a later reviewer can tell a claim about intent from an observation about behaviour. Where a finding could be labelled either by its tool or by its kind, the kind wins — the schema records the precedence.
-
-## Script parameters
-
-### `inventory.py <path>` — Pass A symbol and layer statistics
-
-| Flag | Default | Purpose |
-|---|---|---|
-| `--json FILE` | — | Write the full result as JSON. Use this; the console output is truncated. |
-| `--top N` | 60 | Rows printed to console. |
-| `--min-layers N` | 1 | Drop identifiers appearing in fewer than N layers. On a large repo raise it to cut the tail; 3 is the threshold Pass A treats as a likely domain concept. |
-
-### `harvest_comments.py <path>` — comment extraction and tagging
-
-| Flag | Default | Purpose |
-|---|---|---|
-| `--json FILE` | — | Write the full result as JSON, UTF-8 unescaped. |
-| `--kind TAG` | — | Filter to one tag: `conflict`, `doc`, `rationale`, `flag`, `other`. |
-| `--top N` | 40 | Rows printed to console. |
-| `--include-noise` | off | Also emit boilerplate and commented-out code. Normally leave off. |
-| `--min-doc-lines N` | 5 | **Primary test.** A doc comment with more lines than this is tagged `rationale` regardless of wording. Language-neutral. |
-| `--min-doc-chars N` | 100 | **Auxiliary.** Rescues a dense block that falls under the line threshold. Also derives a floor (`min-doc-lines × 8`) that rejects line counts padded with near-empty lines. Language-sensitive — see below. |
-
-### Calling it: CJK vs Latin codebases
-
-The line threshold works unchanged across languages. Only `--min-doc-chars`, which governs the rescue path, needs adjusting: 100 characters is a full paragraph in Chinese and a single sentence in English, so the default rescues too eagerly on English source.
-
-**Chinese / Japanese / Korean comments** — defaults are calibrated for this, no tuning needed:
-
-```bash
-uv run scripts/inventory.py <repo> --json inventory.json
-uv run scripts/harvest_comments.py <repo> --json comments.json
-uv run scripts/harvest_comments.py <repo> --kind conflict          # read first
-uv run scripts/harvest_comments.py <repo> --kind rationale --top 30
-```
-
-**English comments** — raise the character threshold so ordinary one-line docs don't all become rationale:
-
-```bash
-uv run scripts/harvest_comments.py <repo> --min-doc-chars 250 --json comments.json
-```
-
-**Mixed-language codebase** — disable the rescue path and let the line count decide alone:
-
-```bash
-uv run scripts/harvest_comments.py <repo> --min-doc-chars 99999 --min-doc-lines 4 --json comments.json
-```
-
-Note this also lowers the floor to 32 characters, since the floor tracks the line threshold.
-
-**Calibrating.** Run the `rationale` filter first and look at the count. Hundreds of hits means the threshold is too low for this codebase — raise it. Single digits means comments are scarce, so Pass C will lean on the magic-number sweep instead and Breakpoint 1 will need more of the human's time. Either way, learn this number before starting Pass B.
-
-Tag patterns cover English, Chinese and a few Japanese markers. For another language, extend the marker patterns at the top of the script — `FLAG_RE`, `RATIONALE_RE`, and the `STRONG_`/`WEAK_CONFLICT_RE` pair. The length rule works regardless of language and needs no change.
+**Intent vs. Current Behavior**: Comments drift from code. Contradictions between comment and code are findings: raise them as `open_questions` rather than guessing a winner.
 
 ---
 
-## Setup
+## 6. Execution Pipeline
 
-Both tools install through `uv`. No Node, no compiler, no buildable project required.
+### Pass A — Map (No Inference)
 
-```bash
-uv tool install ast-grep-cli          # structural pattern scanning
-uv run scripts/inventory.py <path>    # deps declared inline via PEP 723
-```
-
-`inventory.py` carries its own dependencies in a PEP 723 header, so `uv run` resolves them automatically — no virtualenv, no requirements.txt to drift out of sync.
-
-If the team already standardises on mise, add ast-grep with an explicit npm backend (`"npm:@ast-grep/cli" = "latest"`). Avoid backends that resolve through the GitHub API — they hit rate limits without a token. Do not introduce mise solely for this skill.
-
-**Tooling tiers.** Use the best available, and record it in `provenance.evidence_type` when no more specific kind applies:
-
-1. **tree-sitter / ast-grep** (default). Parses without resolving dependencies, so it works on projects that don't build. Excludes comments and strings from symbol extraction, which is the main gain over grep.
-2. **LSP** (opt-in). If a language server is already running and the project resolves, cross-file reference counts are more accurate than anything above. Treat as a bonus, not the main path — LSP answers syntax questions, and the hard part here is semantics.
-3. **Plain grep** (fallback). For languages without a grammar. Works, but will match inside comments and strings.
-
-Never convert tool precision into a confidence penalty. Precision and semantic certainty are independent axes; see the schema's note on `evidence_type`.
-
----
-
-## Pass A — Map (no inference)
-
-Scan only. Produce no entities, no rules, no relationships.
+Scan only. Produce no concepts, no axioms, no relations.
 
 ```bash
 uv run scripts/inventory.py <repo> --json inventory.json
 uv run scripts/harvest_comments.py <repo> --json comments.json
 ```
 
-The script extracts declared symbols per file, classifies each file into a layer (api / domain / storage / config / logic), and computes **cross-layer survival**: how many distinct layers each identifier appears in, after normalising case variants so `orderItemId`, `order_item_id` and `ORDER_ITEM_ID` collapse together.
+- Calculates **cross-layer survival**: how many distinct architectural layers (`api`, `domain`, `storage`, `config`, `logic`) each normalized identifier spans.
+- Identifiers spanning $\ge 3$ layers are strong domain candidates. Single-file identifiers are likely technical artifacts.
+- `rank_score` is a reading priority order, not a verdict.
 
-An identifier surviving across three or more layers is likely a domain concept. One living in a single file is likely a technical artifact.
-
-Tests and documentation are scanned for vocabulary but do not count as layers. A name that appears in the README and nowhere else has crossed no boundary, and letting docs count would promote it over names that genuinely span api and storage.
-
-**Treat `rank_score` as a reading order, not a verdict.** It says what to inspect first and nothing more. Do not carry the number into the ontology.
-
-The scanner excludes comments from these counts on purpose — a comment mentioning `AccountLimit` should not inflate its layer count. That exclusion applies to the identifier statistics only. Comments are collected separately by the harvester and carry more domain signal than the symbol table does.
-
-Also collect by hand what the script doesn't: external integrations, third-party specs the system must conform to, and any README or architecture doc. External contracts are the strongest evidence available in Pass C.
-
-### Downstream Call-Graph Traversal (Entry Point Rule)
-
-When the analysis target is an entry point (e.g. HTTP route, RPC handler, CLI command, or event listener):
-- **Entry points are interaction boundaries and protocol dispatchers, not domain entities.** An endpoint represents a transport interface or an operation trigger.
-- **Trace data and call flows downstream:** Follow function invocations and data dependencies into the service, domain, and state layers to discover the persistent data structures and business models being loaded, evaluated, or mutated.
-
-## Pass B — Vocabulary, then stop
-
-Classify each candidate as `domain_candidate`, `technical_artifact`, or `unknown`.
-
-An entity normally has all three of: **identity** (something distinguishes one instance from another), **lifecycle** (created, updated, expired, converted), and **meaning to someone who has never read the code**. `Account`, `Order`, and `Subscription` qualify. `RedisKey`, `HTTPRequest`, `KafkaMessage` do not.
-
-### Protocol Envelopes vs. Domain Entities
-
-Distinguish between **transport envelopes** and **domain entities**:
-- **Protocol Envelopes (Transport & Serialization Containers)**: Wire formats, Data Transfer Objects (DTOs), and serialization wrappers (e.g. JSON payloads, XML envelopes, RPC request/response buffers). These represent transport mechanisms and technical plumbing, not domain entities (unless the system's explicit core domain is protocol conversion).
-- **Domain Entities (Core Business Subjects & Assets)**: The persistent business subjects, agreements, operational assets, and resources governed by the system's business policies.
-
-To ensure comprehensive entity discovery across diverse architectures without assuming specific design paradigms (e.g. DDD or Clean Architecture), verify candidates against the **Universal Structural Inquiries**:
-1. **Commercial / Account Boundary**: What entity establishes the legal, billing, account, or contractual boundary?
-2. **Operational Asset**: What entity represents the primary work, product, payload, or inventory being processed, scheduled, or delivered?
-3. **Resource / Spatial Boundary**: What entity models the capacity, location, slot, channel, or environment where the operation occurs?
-4. **Governing Policy & Quota**: What data structures model the limits, frequency caps, rate budgets, or state transition constraints?
-
-Infrastructure vocabulary (`request`, `handler`, `payload`, `config`) is **downweighted by the scanner, never dropped** — in some systems, an inbound request (such as a claim or bid) is a core domain entity, not plumbing. Record any correction in `system.vocabulary_overrides` so the next run inherits it.
-
-Then detect naming conflicts, the highest-value output of this pass. Start from the harvester's `conflict`-tagged comments — where someone has already written down that two names differ, that note is worth more than any amount of inference:
-- different names used for what appears to be one concept
-- one name used for different concepts in different modules
-- names colliding with an external specification's term but carrying different semantics
-
-Record these in `glossary[].conflict_notes`. **Never resolve a conflict by picking a winner.** The disagreement is the finding.
-
-### 🛑 Breakpoint 1 — vocabulary review
-
-**Save intermediate state first.** Write the current Pass B results and vocabulary findings to `<system-name>.pass-b-draft.yml` following the schema structure. This ensures state persistence and prevents context loss in multi-turn or automated agent execution.
-
-**Self-check before presenting:** Confirm that the candidate list captures the underlying domain assets (the entities answering the Universal Structural Inquiries) and has not merely recorded top-level API endpoint names or protocol envelopes.
-
-Stop. Present the candidate list, the proposed classifications, and every naming conflict — all of it in one message. This is the cheapest correction point in the pipeline: a wrong definition fixed here saves correcting entities, rules and relationships downstream.
-
-If the host offers a structured question tool, it will cap how many questions fit at once. Spend that budget on the classifications that genuinely turn on a yes/no, and put the rest in the message body; splitting a batch across several prompts costs the reviewer more than one long message does.
-
-Invite the human to **add concepts the scan could not find**, not just correct what it did. Tribal knowledge — "we don't serve that partner on weekends, but it's handled upstream" — exists in no repository.
-
-Wait for the response. Do not proceed on assumption.
-
-## Pass C — Behavior
-
-Derive `workflows` and `business_rules` from the confirmed vocabulary.
-
-```bash
-ast-grep scan -c scripts/sgconfig.yml <repo>              # every rule at once
-ast-grep scan -r scripts/rules/magic-numbers-<lang>.yml <repo>   # or one at a time
-```
-
-Rules exist for Go and Python. On a language with no rule file, the three
-discriminators below still apply — you just have to find the constants and
-fallbacks by reading, so say so in `provenance.evidence_type` rather than
-implying a scanner confirmed them.
-
-Three discriminators, in order of usefulness:
-
-### The constant matrix
-
-Every numeric literal that isn't obvious boilerplate came from a person making a decision that the code does not record. Classify each:
-
-| | Technical artifact | Business rule |
-|---|---|---|
-| **What changes if you alter it** | server load, throughput, memory, retry latency | billed amount, state transition condition, risk limit, compliance window |
-| **Where it lives** | client init, middleware, connection pool | inside an entity, a state machine, a precondition check |
-| **Typical shape** | `timeout: 30s`, `max_conns: 100`, `backoff: 2.0` | `discount: 0.85`, `cool_off_days: 7`, `max_loan: 50000` |
-| **Handling** | exclude from the ontology | record in `business_rules`; if undocumented, also raise an open question |
-
-**Exception worth watching for:** an unusually specific technical constant. `timeout: 30s` is a template value; `timeout: 2.7s` means someone measured something. For instance, an upstream timeout may be dictated by an external contractual SLA or downstream partner window — a business constraint wearing a performance-tuning costume. Technical constants are excluded by default, but a suspiciously precise one earns an open question.
-
-### Silent fallbacks are policy in disguise
-
-Default returns, swallowed errors, and "return the first item if nothing qualifies" routinely encode a business decision such as *never return an empty response*. They look like defensive coding and get skipped. Check every one the rules surface, and ask what the caller is being protected from.
-
-### Read the rationale comments before guessing
-
-Before inferring intent behind a constant, check whether `harvest_comments.py` already tagged a `rationale` comment on or beside that line. A written explanation moves the rule up the confidence table; reaching for inference when one already exists is the most avoidable error in this pass.
-
-### The rewrite test
-
-If this system were rebuilt in another language on a different database, would this logic survive? `if err != nil` disappears. A frequency cap does not.
-
-Do not promote error handling, retries, connection pooling, or serialization concerns into business rules by default.
-
-**If this pass reveals a concept Pass B never registered, go back to Pass B and add it** rather than forcing it into an existing entity. The pipeline has a loop here on purpose.
-
-## Pass D — Graph and contradictions
-
-Build `relationships` last, once entities and workflows are stable. `subject`/`object` aren't limited to `entities[].id` — they can point at a `workflows[].id` or `business_rules[].id` too, when that's the true shape of the connection. `predicate` is an open string, not a closed enum: write the verb a domain person would actually use ("places", not a forced-fit "owns"). Use `implemented_by` to connect a business concept to the function or service that realises it — this is what lets the ontology answer "who actually owns this". Put the code coordinates in `provenance`, not in a second set of fields on the relationship.
-
-Because `predicate` is open text, watch for the same concept getting written as two different verbs across the same ontology (`owns` in one place, `has` in another). Don't silently pick one — that's a naming conflict like any other, so record it in `glossary[].conflict_notes` rather than letting both spellings stand.
-
-Finalise `open_questions`. Every contradiction found in earlier passes lands here, unresolved.
-
-### 🛑 Breakpoint 2 — ontology review
-
-**Save final ontology file.** Write the complete ontology to `<system-name>.ontology.yml`.
-
-Present the complete YAML plus the open questions grouped P0 / P1 / P2, each with its proposed default. Lead with the P0s — those are the ones that stop the model from standing up at all. Then stop.
+#### Downstream Call-Graph Traversal (Entry Point Rule)
+When the analysis target is an entry point (e.g. HTTP route, RPC handler, CLI command, event listener):
+- **Entry points are interaction boundaries and protocol dispatchers, not domain concepts.**
+- **Trace data and call flows downstream:** Follow function invocations and data dependencies into the service, domain, and state layers to discover persistent domain concepts and world events.
 
 ---
 
-## Confidence
+### Pass B — Vocabulary, Concepts & Context Alignment, Then STOP
 
-Anchor `confidence` to evidence type, not intuition:
+Classify candidates into `domain_candidate`, `technical_artifact`, or `unknown`.
 
-| Score | Evidence |
-|---|---|
-| 0.9 | an external contract (spec, vendor doc, schema) agrees with the name and the usage |
-| 0.7 | a comment explains the intent, or usage is consistent across several files |
-| 0.5 | single-site inference, the name is suggestive, nobody wrote anything down |
-| 0.3 | magic number or opaque flag, the meaning is guessed |
+#### Architectural Layers (技術分層) vs. Bounded Contexts (業務限界上下文)
+> [!IMPORTANT]
+> **絕對嚴禁將技術架構分層（`api`, `storage`, `dto`）混淆為 DDD 限界上下文（Bounded Contexts）**：
+> - **架構技術分層（Layers）**：`api` (Handler/DTO), `domain` (業務邏輯), `storage` (DAO/DB Table)。這是單一服務內部的技術管線，DTO 與 DAO 是技術產物，直接過濾排除。
+> - **業務限界上下文（Bounded Contexts）**：`billing` (帳務), `crm` (客戶關係), `settlement` (結算履約), `ad_decision` (廣告決策)。這是業務子領域與通用語言邊界。`concepts[].context_mappings` 專門記錄不同 Bounded Context 間的語意對齊。
 
-**Anything below 0.5 must emit a matching `open_questions` entry.** Without that rule the score is decoration nobody acts on.
+#### Detecting "Different Names, Same Meaning" (Cross-Context Aliasing)
+- Compare data models and comments across distinct business modules / subdomains (e.g. `billing` calls it `PayerAccount` vs. `crm` calls it `Client`).
+- If they refer to the same underlying business subject, declare one canonical concept in `concepts` and record local names in `concepts[].context_mappings` and `vocabulary[].aliases`.
 
-## Interaction protocol
+#### Detecting "Same Name, Different Meaning" (Homonym Disambiguation)
+- Identify vocabulary collisions from `conflict`-tagged comments and cross-subdomain divergence.
+- If the same term is used for different domain models across Bounded Contexts (e.g. `Order` in Sales vs. `Order` in Warehouse), split them into distinct `concepts`, mark them with `disjoint_with` if applicable, and document the divergence in `vocabulary[].conflict_notes`. **Never pick a winner.** The disagreement is the finding.
 
-**Batch questions.** One interruption with ten questions costs the human far less than ten interruptions.
+#### Universal Structural Inquiries
+To discover domain concepts and world events across any codebase:
+1. **Commercial / Account Boundary**: What concept establishes legal, billing, account, or contractual boundaries?
+2. **Operational Asset**: What concept represents the primary product, payload, material, or inventory being processed or scheduled?
+3. **Resource / Spatial Boundary**: What concept models capacity, location, slot, channel, or operating environment?
+4. **Governing Policy & Quota**: What data structures model limits, frequency caps, rate budgets, or state constraints?
+5. **Historical World Events**: What occurrences represent business facts that happened in the world (e.g. conversions, impressions, transactions)?
 
-**Attach a `proposed_default` to every question**, so the common case is confirming rather than composing an answer from scratch.
+#### Protocol Envelopes vs. Domain Concepts & Events
+- **Protocol Envelopes (Transport Plumbing)**: DTOs, wire formats, serialization wrappers (e.g., `JSONPayload`, `RPCRequestBuffer`, `HTTPMiddleware`, `RedisKeyBuilder`). Exclude from concepts unless the system's core business is protocol conversion.
+- **Domain Concepts & Events (Core Business Subjects & Facts)**: Core business subjects, operational assets, and historical world events governed by domain policies.
 
-**Record answers in `human_note` and set `human_verified: true`.** Every reviewable section carries those two fields — see the schema's shared review block. Do not overwrite the original inferred `description`. Keeping the wrong first guess beside the correction is useful later, when someone asks why a field is named the way it is.
+#### 🛑 Breakpoint 1 — Vocabulary, Concepts & Context Review
+1. Save intermediate state to `<system-name>.pass-b-draft.yml`.
+2. Present the candidate list, classifications, cross-context aliases, and naming conflicts in **one batched message**.
+3. Attach `proposed_default` to questions to minimize human review effort.
+4. Wait for user confirmation before proceeding.
 
-**An unanswered question stays open.** Never quietly promote a `proposed_default` into the body.
+---
 
-## Keeping the scanners honest
+### Pass C — Axioms, Constraints & Workflows
+
+Derive `workflows`, `events`, and `axioms` (business constraints & axioms) from confirmed vocabulary and concepts.
 
 ```bash
-uv run tests/run_tests.py     # both scanners and every ast-grep rule
+ast-grep scan -c scripts/sgconfig.yml <repo>
 ```
 
-These scanners fail in a way that is easy to miss: they keep running and
-quietly return the wrong set. A detector that matches nothing looks exactly
-like a clean codebase; a tagger that over-matches looks like a codebase full
-of findings. Neither surfaces as an error, and both corrupt the ontology
-downstream — a false `conflict` lands directly in `glossary[].conflict_notes`,
-which is the one bucket this skill tells you to trust on sight.
+#### Discriminators:
+1. **The Constant Matrix**:
+   | | Technical Artifact | Business Constraint / Axiom |
+   |---|---|---|
+   | **What changes if altered** | Server load, memory, retry latency | Billed amount, discount, risk limit, qualification window |
+   | **Where it lives** | Client init, connection pool, transport middleware | Domain concept, state transition check, pricing logic |
+   | **Typical shape** | `timeout: 30s`, `max_conns: 100` | `discount: 0.85`, `cool_off_days: 7`, `max_loan: 50000` |
+   | **Handling** | Exclude from ontology | Record in `axioms`; if undocumented, raise `open_question` |
+   *Exception*: Unusually specific constants (e.g. `timeout: 2.7s`) often disguise contractual SLAs or downstream partner windows; raise an `open_question`.
 
-So checks are placed by what their failure would tell you:
+2. **Silent Fallbacks are Policy in Disguise**:
+   Default returns, swallowed errors, and "return first item if none qualify" often encode implicit business decisions (e.g., *never return empty creative*).
 
-| Failure | Where the check belongs |
+3. **The Rewrite Test**:
+   If the system were rewritten in another language on a different database, would this logic survive? Infrastructure plumbing (`if err != nil`, connection retry) disappears; business quotas and domain constraints do not.
+
+---
+
+### Pass D — Declared Relations, Final Review & Report Generation
+
+Build `relations`, finalize `open_questions`, save both YAML and Markdown deliverables.
+
+1. **Declared Semantic Triples & Inverses**:
+   - Model as open triples (`subject - predicate - object`).
+   - Define `inverse_of` where meaningful (e.g. `places` <-> `placed_by`).
+   - Specify `characteristics` (e.g. `transitive` for hierarchical containment, `functional` for 1-to-1 associations).
+   - Use `implemented_by` to link a business concept to its realizing service/function (put code coordinates in `provenance`, not in custom fields).
+2. **Finalize Open Questions (OWA Compliance)**:
+   - Group by severity (`P0`: blocking model integrity, `P1`: plausible default needing confirmation, `P2`: minor edge case).
+   - Every claim with `confidence < 0.5` **must** have a corresponding `open_questions` entry.
+3. **Generate Paired Output Artifacts**:
+   - Step 1: Save machine-readable specification to `<system-name>.ontology.yml`.
+   - Step 2: Render human-readable report to `<system-name>.ontology.md` following `references/ontology-report-template.md`.
+
+#### 🛑 Breakpoint 2 — Ontology Review
+1. Validate output: `uv run evals/validate_ontology.py <system-name>.ontology.yml`.
+2. Present the summary along with prioritized open questions (`P0` leading) and links to `<system-name>.ontology.yml` and `<system-name>.ontology.md`.
+3. Record human adjustments in `human_note` and set `human_verified: true`. Do not overwrite initial inferred guesses.
+
+---
+
+## 7. Confidence & Evidence Tiers
+
+Anchor `confidence` to objective evidence:
+- `0.9`: External contract (spec, vendor doc, schema, API contract) agrees with name and usage.
+- `0.7`: Doc comment or explicit written rationale explains intent, or usage is consistent across $\ge 3$ layers.
+- `0.5`: Single-site inference, suggestive naming, no written documentation.
+- `0.3`: Magic number, opaque fallback, or speculative intent.
+
+---
+
+## 8. Keeping the Scanners Honest
+
+Run test suites before and after modifying detection rules:
+```bash
+uv run tests/run_tests.py
+```
+
+| Verification Layer | Where it belongs |
 |---|---|
-| A pattern matched the wrong thing | `tests/` — deterministic, no transcript needed |
-| A rule matched nothing | `scripts/rule-tests/` — ast-grep's own valid/invalid samples |
-| The model invented an entity, skipped a breakpoint, or promoted a timeout to a business rule | an eval — judgment failures, diagnosable only from a transcript |
+| Pattern matches wrong syntax / regex defect | `tests/` — deterministic |
+| ast-grep rule syntax / pattern validity | `scripts/rule-tests/` |
+| LLM judgment (hallucinated concept, skipped breakpoint, promoted technical constant) | `evals/` — transcript evaluation |
 
-Anything a regex decides belongs in the first two rows. Reaching for an eval to
-find a regex bug costs a full run and still leaves you reading transcripts to
-learn which pattern broke.
+---
 
-`evals/fixtures/adserving` is a small Go service with eleven pieces of
-evidence planted in it, and `evals/adserving.ground-truth.yml` is the answer
-key — kept outside the fixture so scanning cannot reach it. Each plant says
-which row above owns it: the tests assert only that the evidence surfaces,
-while its `judgment` field describes what an eval would have to grade.
-`evals/validate_ontology.py` sits between the two, failing only on what is
-wrong whatever the house style and raising the rest as questions for a person.
+## 9. What NOT to Do (Summary Checklist)
 
-**Add a rule's samples in the same change as the rule.** Several defects found
-while writing these tests were rules that had never matched anything — among
-them `$OBJ.Transition($$$)`, which does not parse as a Go pattern at all.
-Running the scanner would never have revealed that; it just reported nothing.
-Write the invalid samples inside a function, too: at file scope Go reads
-`order.SetStatus(x)` as a type conversion, so a bare statement tests a shape
-that does not occur in real source.
-
-## What not to do
-
-A recall list, deliberately repeating rules argued for above. If one of these
-ever disagrees with the section it came from, the section is right — this is
-the summary, not the source.
-
-- Do not invent entities to make the graph look complete.
-- Do not resolve naming conflicts. Record them.
-- Do not put storage types (`bigint`, `varchar`) in entity attributes. Storage belongs to a metadata layer.
-- Do not describe a workflow step by paraphrasing code line by line. If the description would be meaningless to someone who cannot read the language, rewrite it.
-- Do not let `rank_score`, layer counts, or any scanner output appear in the final ontology. Those are inputs to your judgment, not findings.
+- **Do NOT confuse Ontology with Code Summary**: Do not paraphrase functions line-by-line or list AST structures.
+- **Do NOT confuse Ontology with Database Storage (ERD)**: Do not include storage data types (`bigint`, `varchar`, `jsonb`) in concept properties.
+- **Do NOT confuse Ontology with Software Execution (DDD)**: Do not assign procedural execution responsibilities or aggregate locking rules to ontology concepts.
+- **Do NOT confuse World Events with DDD Domain Events**: Do not treat world event definitions as Message Queue callback code; model who, what, when, and causality.
+- **Do NOT invent concepts, events, or relations** just to make a knowledge graph appear complete. Honest gaps are better than hallucinations.
+- **Do NOT silently resolve naming conflicts**. Record the ambiguity in `vocabulary[].conflict_notes` and use `context_mappings` / `disjoint_with` for disambiguation.
+- **Do NOT confuse Architectural Layers with DDD Bounded Contexts**: Do NOT treat `api`, `storage`, `dto`, or `middleware` as Bounded Contexts. Context mappings strictly map business subdomains (`billing`, `settlement`, `ad_decision`, `crm`), not technical tiers.
+- **Do NOT leak scanner metrics** (`rank_score`, `layer_count`, `occurrences`) into the final ontology YAML or Markdown report.

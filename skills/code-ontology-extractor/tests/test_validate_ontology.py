@@ -30,7 +30,7 @@ def test_a_well_formed_ontology_raises_nothing():
 
 @pytest.mark.parametrize("check_id", [
     "confidence.open_question",
-    "relationships.resolvable",
+    "relations.resolvable",
     "questions.severity",
 ])
 def test_structural_defects_fail(check_id):
@@ -40,11 +40,11 @@ def test_structural_defects_fail(check_id):
 
 
 @pytest.mark.parametrize("check_id", [
-    "entities.storage_flavoured_attributes",
+    "concepts.storage_flavoured_properties",
     "questions.proposed_default",
 ])
 def test_judgment_calls_are_raised_for_review_not_failed(check_id):
-    # There is no one right way to word an attribute, so a suspicious word is
+    # There is no one right way to word an attribute/property, so a suspicious word is
     # a question for someone who knows the domain -- not a verdict the tool
     # gets to hand down.
     result = results_for("bad.ontology.yml")[check_id]

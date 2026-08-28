@@ -1,13 +1,13 @@
 system: {name: x}
-glossary: []
-entities:
+vocabulary: []
+concepts:
   - id: ad_request
-    attributes:
+    properties:
       - {name: created_at, description: "timestamp of arrival"}
     confidence: 0.3
 workflows: []
-business_rules: []
-relationships:
-  - {subject: ad_request, predicate: triggers, object: ghost_entity, description: ""}
+axioms: []
+relations:
+  - {subject: ad_request, predicate: triggers, object: ghost_concept, description: ""}
 open_questions:
   - {question: "is it?", severity: P9, proposed_default: ""}

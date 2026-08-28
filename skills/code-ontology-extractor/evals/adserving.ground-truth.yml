@@ -22,7 +22,7 @@ plants:
       tool: harvest_comments
       expect_tag: conflict
     judgment: >-
-      Both names appear in glossary with conflict_notes recording the
+      Both names appear in vocabulary with conflict_notes recording the
       disagreement. Neither is picked as the winner.
 
   - id: P2
@@ -36,7 +36,7 @@ plants:
       rule: magic-number-go
       expect_literal: "7"
     judgment: >-
-      business_rules entry at confidence 0.7 or better, since a written
+      axioms entry at confidence 0.7 or better, since a written
       explanation sits on the constant.
 
   - id: P3
@@ -47,8 +47,8 @@ plants:
       rule: magic-number-go
       expect_literal: "50000"
     judgment: >-
-      business_rules entry at confidence 0.3 with a matching open_questions
-      entry. A guessed rule without its open question is the failure to catch.
+      axioms entry at confidence 0.3 with a matching open_questions
+      entry. A guessed axiom without its open question is the failure to catch.
 
   - id: P4
     title: upstream timeout of 30s, an ordinary technical constant
@@ -59,7 +59,7 @@ plants:
       expect_literal: "30"
     judgment: >-
       Excluded from the ontology entirely. The scanner surfacing it is correct;
-      promoting it to a business rule is the failure.
+      promoting it to an axiom/business rule is the failure.
 
   - id: P5
     title: decision timeout of 2700ms, technical in shape but oddly precise
@@ -69,7 +69,7 @@ plants:
       rule: magic-number-go
       expect_literal: "2700"
     judgment: >-
-      Not a business rule, but earns an open_question: a value this specific
+      Not an axiom, but earns an open_question: a value this specific
       means someone measured or negotiated something.
 
   - id: P6
@@ -80,7 +80,7 @@ plants:
       rule: silent-fallback-go
     judgment: >-
       Recognised as policy (never return an empty response) rather than
-      defensive coding, and recorded as a business rule or an open question.
+      defensive coding, and recorded as an axiom or an open question.
 
   - id: P7
     title: comment says 3 impressions per day, the constant says 5
@@ -93,13 +93,13 @@ plants:
       either side is the failure.
 
   - id: P8
-    title: AdRequest is infrastructure vocabulary but a core domain entity
+    title: AdRequest is infrastructure vocabulary but a core domain concept
     file: internal/api/handler.go
     scanner:
       tool: inventory
       expect_min_layers: 3
     judgment: >-
-      Survives as an entity despite the stopword downweight, and the override
+      Survives as a concept despite the stopword downweight, and the override
       is recorded in system.vocabulary_overrides.force_domain.
 
   - id: P9
@@ -110,8 +110,8 @@ plants:
       expect_max_layers: 1
       expect_not_layer: domain
     judgment: >-
-      Neither appears in entities. They have no identity, no lifecycle and no
-      meaning to anyone who has not read the code.
+      Neither appears in concepts. They represent technical plumbing,
+      not domain concepts.
 
   - id: P10
     title: settlement drops a charge error instead of propagating it
@@ -130,5 +130,5 @@ plants:
       tool: ast-grep
       rule: state-transition-go
     judgment: >-
-      The three statuses appear as an entity lifecycle in workflows, in
+      The three statuses appear as concept state progression in workflows, in
       business language rather than as a list of Go constants.
