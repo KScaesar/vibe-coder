@@ -1,0 +1,18 @@
+id: silent-fallback-python
+language: python
+severity: hint
+message: >-
+  Silent fallback. Reads as defensive coding but often encodes a policy
+  decision. The default value in a .get() call is frequently a business
+  default that nobody documented.
+rule:
+  any:
+    # Swallowed exception.
+    - kind: except_clause
+      has:
+        kind: block
+        has:
+          kind: pass_statement
+    # Default value supplied at lookup time.
+    - pattern: '$D.get($K, $DEFAULT)'
+    - pattern: 'getattr($O, $A, $DEFAULT)'

@@ -1,0 +1,44 @@
+# Entity lifecycles are the backbone of a workflow, and in Go they are almost
+# always an assignment to a Status/State field or an iota block declaring the
+# state space itself.
+#
+# Every snippet is wrapped in a func on purpose. At file scope Go reads
+# `order.SetStatus(x)` as a type conversion rather than a method call, so a
+# bare statement tests a shape that never occurs in real source.
+id: state-transition-go
+valid:
+  - |
+    func f(order *Order) {
+      current := order.Status
+      _ = current
+    }
+  - |
+    func f(order *Order) {
+      order.Amount = 500
+    }
+invalid:
+  - |
+    func f(order *Order) {
+      order.Status = StatusSettled
+    }
+  - |
+    func f(order *Order) {
+      order.State = Active
+    }
+  - |
+    func f(order *Order) {
+      order.SetStatus(StatusSettled)
+    }
+  - |
+    func f(order *Order) {
+      order.SetState(Active)
+    }
+  - |
+    func f(order *Order) {
+      order.Transition(Active, Settled)
+    }
+  - |
+    const (
+      Pending Status = iota
+      Settled
+    )

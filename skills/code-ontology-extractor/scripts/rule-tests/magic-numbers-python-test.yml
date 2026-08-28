@@ -1,0 +1,12 @@
+id: magic-number-python
+valid:
+  - "x = 0"
+  - "x = 1"
+  - "x = 2"
+  - "x = 100"
+  - "x = 1024"
+  - "x = 1.0"
+invalid:
+  - "cool_off_days = 7"
+  - "discount = 0.85"
+  - "max_loan = 50000"

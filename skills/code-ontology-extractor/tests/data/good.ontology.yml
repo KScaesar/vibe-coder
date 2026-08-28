@@ -1,0 +1,71 @@
+system:
+  name: adserving
+  domain: advertising
+  description: Decides which creative to return for an ad request and settles conversions.
+  version: "1.0"
+  commit_sha: abc1234
+  generated_at: "2026-08-28T10:00:00Z"
+  review_status: draft
+  vocabulary_overrides:
+    force_domain: [ad_request]
+    force_technical: []
+glossary:
+  - term: conversion_id
+    definition: The identifier the advertiser's tracking platform returns for a conversion.
+    aliases: []
+    provenance: []
+    conflict_notes: >-
+      click_id and conversion_id are used interchangeably in places but are not
+      the same; one click can map to several conversions.
+entities:
+  - id: ad_request
+    name: Ad Request
+    description: One request from the player at an ad break.
+    attributes:
+      - name: placement
+        description: Which negotiated slot the request is for.
+    provenance: []
+    confidence: 0.7
+    human_verified: false
+  - id: conversion_event
+    name: Conversion Event
+    description: A confirmed advertiser-side outcome attributed to a click.
+    attributes: []
+    provenance: []
+    confidence: 0.3
+    human_verified: false
+workflows:
+  - id: settle_nightly
+    name: Nightly settlement
+    trigger: The settlement batch runs overnight.
+    steps:
+      - description: Each pending conversion is charged and marked cleared.
+        provenance: []
+    inputs: [conversion_event]
+    outputs: [conversion_event]
+business_rules:
+  - id: cool_off_7d
+    description: A user does not see the same creative again for seven days.
+    condition: The same user has already been shown this creative.
+    action: The creative is excluded from the candidate set.
+    provenance: []
+    confidence: 0.9
+    human_verified: false
+    human_note: ""
+relationships:
+  - subject: ad_request
+    predicate: produces
+    object: conversion_event
+    description: A served request may later produce a conversion.
+    provenance: []
+  - subject: conversion_event
+    predicate: reported_by
+    object: advertiser_tracking_platform
+    description: External system outside this codebase that reports conversions.
+    provenance: []
+open_questions:
+  - question: Is one conversion_event ever attributed to more than one click_id?
+    related_to: [conversion_event]
+    provenance: []
+    severity: P1
+    proposed_default: Assume one-to-many from click to conversion.

@@ -1,0 +1,33 @@
+id: state-transition-go
+language: go
+severity: hint
+message: >-
+  Possible state transition. Entity lifecycles are the backbone of a workflow;
+  collect these before writing the workflows section.
+rule:
+  any:
+    - pattern: '$OBJ.Status = $VAL'
+    - pattern: '$OBJ.State = $VAL'
+    # Matched structurally rather than as a pattern per method name: a call
+    # pattern with $$$ in the argument list does not parse in Go (the parser
+    # reads `$OBJ.Method` as a qualified_type), so a pattern like
+    # `$OBJ.Transition($$$)` silently matches nothing. Going through
+    # call_expression also makes this arity-independent.
+    - kind: call_expression
+      has:
+        field: function
+        kind: selector_expression
+        has:
+          field: field
+          kind: field_identifier
+          regex: '^(SetStatus|SetState|Transition|TransitionTo|MarkAs|MoveTo)$'
+    # An iota block usually declares the state space itself. stopBy: end is
+    # required because iota sits under an expression_list, not directly
+    # beneath the const_spec.
+    - kind: const_declaration
+      has:
+        kind: const_spec
+        stopBy: end
+        has:
+          kind: iota
+          stopBy: end

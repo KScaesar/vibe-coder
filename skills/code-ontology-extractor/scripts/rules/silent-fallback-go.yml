@@ -1,0 +1,25 @@
+id: silent-fallback-go
+language: go
+severity: hint
+message: >-
+  Silent fallback. This reads as defensive coding but often encodes a policy
+  decision, e.g. "never return an empty response". Ask what the caller is
+  protected from before dismissing it.
+rule:
+  any:
+    # Degrade to the first candidate when nothing qualifies.
+    - pattern: 'if $COND { return &$ARR[0] }'
+    - pattern: 'if $COND { return $ARR[0] }'
+    # Error dropped instead of propagated. Both the bare form and the
+    # `if err := f(); err != nil` form, which is the more common of the two
+    # in idiomatic Go and was missed while only the bare form was listed.
+    - pattern: 'if err != nil { return nil }'
+    - pattern: 'if err != nil { return $A, nil }'
+    - pattern: 'if err != nil { continue }'
+    - pattern: 'if err != nil { break }'
+    - pattern: 'if $INIT; err != nil { return nil }'
+    - pattern: 'if $INIT; err != nil { return $A, nil }'
+    - pattern: 'if $INIT; err != nil { continue }'
+    - pattern: 'if $INIT; err != nil { break }'
+    # Explicit default branch in a type/value switch.
+    - kind: default_case

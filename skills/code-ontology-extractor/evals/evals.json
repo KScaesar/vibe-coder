@@ -1,0 +1,58 @@
+{
+  "skill_name": "code-ontology-extractor",
+  "fixture": "evals/fixtures/adserving",
+  "ground_truth": "evals/adserving.ground-truth.yml",
+  "note": "Assertions grade the `judgment` half of each plant. The `scanner` half is already covered deterministically in tests/test_fixture_detection.py, so nothing here re-checks whether evidence was surfaced -- only what was made of it.",
+  "evals": [
+    {
+      "id": 0,
+      "name": "vocabulary-breakpoint",
+      "prompt": "我接手了一個 ad serving 的服務，原本寫的人已經離職了，沒有留下任何文件。code 在 <FIXTURE>。我想先搞清楚這個系統在業務上到底在處理什麼、有哪些核心概念，不要跟我講 Go 的分層架構或 package 怎麼切。",
+      "expected_output": "Passes A and B only. A candidate vocabulary list with domain/technical classifications, the click_id vs conversion_id conflict recorded unresolved, and a stop for review -- not a finished ontology.",
+      "assertions": [
+        {"id": "A0.1", "text": "Stops for review after the vocabulary pass instead of producing a finished ontology with workflows and business_rules", "plants": []},
+        {"id": "A0.2", "text": "Records the click_id / conversion_id disagreement without picking a winner", "plants": ["P1"]},
+        {"id": "A0.3", "text": "Classifies AdRequest as a domain concept despite it being infrastructure-shaped vocabulary", "plants": ["P8"]},
+        {"id": "A0.4", "text": "Classifies RedisKeyBuilder and HTTPMiddleware as technical artifacts, not domain entities", "plants": ["P9"]},
+        {"id": "A0.5", "text": "Presents questions to the reviewer in one batch with proposed defaults rather than asking one at a time", "plants": []},
+        {"id": "A0.6", "text": "Describes concepts in business language a non-programmer could follow, with no Go types or package paths in the descriptions", "plants": []}
+      ],
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "full-ontology-unattended",
+      "prompt": "幫我把 <FIXTURE> 這個服務的商業邏輯萃取成一份 domain ontology 的 YAML 檔。我這兩天在外面開會沒辦法即時回你問題，所以不要停下來等我 —— 不確定的地方就記成 open question 附上你建議的答案，我回來再一起看。",
+      "expected_output": "A complete <name>.ontology.yml following references/ontology-schema.yml, with every low-confidence claim carrying a matching open_questions entry.",
+      "assertions": [
+        {"id": "A1.1", "text": "Produces a YAML file with the schema's sections: system, glossary, entities, workflows, business_rules, relationships, open_questions", "plants": []},
+        {"id": "A1.2", "text": "The 7-day cool-off appears as a business rule at confidence 0.7 or higher, because a written contract rationale sits beside the constant", "plants": ["P2"]},
+        {"id": "A1.3", "text": "The undocumented 50000 daily spend cap is recorded at confidence 0.3 or lower AND carries a matching open_questions entry", "plants": ["P3"]},
+        {"id": "A1.4", "text": "The 30-second upstream timeout does not appear in business_rules", "plants": ["P4"]},
+        {"id": "A1.5", "text": "The 2700ms decision timeout is not a business rule but does raise an open question about why the value is so specific", "plants": ["P5"]},
+        {"id": "A1.6", "text": "Returning the first creative when none qualify is treated as a policy decision, not dismissed as defensive coding", "plants": ["P6"]},
+        {"id": "A1.7", "text": "The disagreement between the comment saying 3 impressions and the constant saying 5 is raised as an open question, without silently trusting either side", "plants": ["P7"]},
+        {"id": "A1.8", "text": "The settlement status lifecycle appears as workflow or entity lifecycle in business language, not as a list of Go constants", "plants": ["P11"]},
+        {"id": "A1.9", "text": "Neither RedisKeyBuilder nor HTTPMiddleware appears in entities", "plants": ["P9"]},
+        {"id": "A1.10", "text": "No entity attribute carries a storage type such as bigint, varchar, numeric or TEXT", "plants": []},
+        {"id": "A1.11", "text": "No rank_score, layer count or other scanner output appears anywhere in the ontology", "plants": []},
+        {"id": "A1.12", "text": "Every relationship subject and object either resolves to a declared id or is described as an external concept", "plants": []}
+      ],
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "business-rules-only",
+      "prompt": "<FIXTURE> 這包 code 裡面到底藏了哪些商業規則？我下週要跟廣告主做合約 review，需要知道系統實際上在執行哪些限制，還有哪些是我們自己加的、合約裡其實沒寫。",
+      "expected_output": "The business rules separated from technical constants, each with its evidence and confidence, and an explicit list of what could not be confirmed from the code.",
+      "assertions": [
+        {"id": "A2.1", "text": "The 7-day cool-off is identified as contractual, citing the comment that says so", "plants": ["P2"]},
+        {"id": "A2.2", "text": "Connection timeouts and pool sizes are excluded from the business rules", "plants": ["P4"]},
+        {"id": "A2.3", "text": "Separates rules backed by written evidence from rules that are inferred, rather than presenting all of them at one confidence", "plants": ["P3"]},
+        {"id": "A2.4", "text": "States plainly which constraints could not be confirmed from the code, instead of filling the gaps with plausible-sounding rules", "plants": ["P3", "P5"]},
+        {"id": "A2.5", "text": "The frequency cap contradiction (comment 3, code 5) is surfaced as something to verify before the contract review", "plants": ["P7"]}
+      ],
+      "files": []
+    }
+  ]
+}

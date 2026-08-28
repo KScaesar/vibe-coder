@@ -1,0 +1,59 @@
+# The point of this rule is the gap between "handled" and "propagated".
+# An error passed up the stack is a decision the caller still gets to make;
+# an error dropped here is a policy nobody wrote down.
+id: silent-fallback-go
+valid:
+  - |
+    func f() error {
+      if err != nil { return err }
+      return nil
+    }
+  - |
+    func f() (int, error) {
+      if err != nil { return 0, err }
+      return 1, nil
+    }
+  - |
+    func f() error {
+      if err := charge(o); err != nil { return err }
+      return nil
+    }
+invalid:
+  - |
+    func f() error {
+      if err != nil { return nil }
+      return nil
+    }
+  - |
+    func f() error {
+      if err := charge(o); err != nil { return nil }
+      return nil
+    }
+  - |
+    func f() (int, error) {
+      if err := charge(o); err != nil { return 0, nil }
+      return 1, nil
+    }
+  - |
+    func f() (int, error) {
+      if err != nil { return 0, nil }
+      return 1, nil
+    }
+  - |
+    func f() {
+      for _, x := range xs {
+        if err != nil { continue }
+      }
+    }
+  - |
+    func pick(cands []Ad, all []Ad) *Ad {
+      if len(cands) == 0 { return &all[0] }
+      return &cands[0]
+    }
+  - |
+    func f(s State) string {
+      switch s {
+      case Active: return "active"
+      default: return "unknown"
+      }
+    }

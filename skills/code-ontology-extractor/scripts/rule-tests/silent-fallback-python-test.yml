@@ -1,0 +1,16 @@
+id: silent-fallback-python
+valid:
+  - |
+    try:
+        charge()
+    except BillingError:
+        raise
+  - "rate = table[key]"
+invalid:
+  - |
+    try:
+        charge()
+    except BillingError:
+        pass
+  - "rate = table.get(key, 0.85)"
+  - "cap = getattr(cfg, 'frequency_cap', 3)"

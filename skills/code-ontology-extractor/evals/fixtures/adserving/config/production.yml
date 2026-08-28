@@ -1,0 +1,10 @@
+ad_request:
+  description: Tuning for the inbound ad request path and its decision budget
+  max_concurrent: 512
+
+frequency_cap:
+  enabled: true
+  cool_off_days: 7
+
+settlement:
+  batch_size: 500

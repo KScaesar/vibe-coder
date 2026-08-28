@@ -1,0 +1,134 @@
+# Answer key for evals/fixtures/adserving.
+#
+# Deliberately a sibling of the fixture rather than a file inside it: the
+# fixture is scanned, and an eval agent is pointed at it. Keeping the answers
+# out of the tree is what makes a run mean anything.
+#
+# Every plant declares which verification layer owns it:
+#   scanner   — a regex or ast-grep rule decides. Checked in tests/, no LLM.
+#   judgment  — the model has to reason about it. Checked by an eval.
+#
+# Several plants have both: the scanner surfaces the evidence, and judgment
+# decides what it means. Those are the ones worth watching, because a scanner
+# pass says nothing about whether the ontology came out right.
+
+fixture: fixtures/adserving
+
+plants:
+  - id: P1
+    title: click_id and conversion_id are explicitly not the same thing
+    file: internal/domain/settlement.go
+    scanner:
+      tool: harvest_comments
+      expect_tag: conflict
+    judgment: >-
+      Both names appear in glossary with conflict_notes recording the
+      disagreement. Neither is picked as the winner.
+
+  - id: P2
+    title: cool-off period of 7 days, with a contract rationale beside it
+    file: internal/domain/frequency.go
+    scanner:
+      tool: harvest_comments
+      expect_tag: rationale
+    also_scanner:
+      tool: ast-grep
+      rule: magic-number-go
+      expect_literal: "7"
+    judgment: >-
+      business_rules entry at confidence 0.7 or better, since a written
+      explanation sits on the constant.
+
+  - id: P3
+    title: maxDailySpend of 50000 with no explanation anywhere
+    file: internal/domain/decision.go
+    scanner:
+      tool: ast-grep
+      rule: magic-number-go
+      expect_literal: "50000"
+    judgment: >-
+      business_rules entry at confidence 0.3 with a matching open_questions
+      entry. A guessed rule without its open question is the failure to catch.
+
+  - id: P4
+    title: upstream timeout of 30s, an ordinary technical constant
+    file: internal/platform/middleware.go
+    scanner:
+      tool: ast-grep
+      rule: magic-number-go
+      expect_literal: "30"
+    judgment: >-
+      Excluded from the ontology entirely. The scanner surfacing it is correct;
+      promoting it to a business rule is the failure.
+
+  - id: P5
+    title: decision timeout of 2700ms, technical in shape but oddly precise
+    file: internal/api/handler.go
+    scanner:
+      tool: ast-grep
+      rule: magic-number-go
+      expect_literal: "2700"
+    judgment: >-
+      Not a business rule, but earns an open_question: a value this specific
+      means someone measured or negotiated something.
+
+  - id: P6
+    title: returns the first creative when nothing qualifies
+    file: internal/domain/decision.go
+    scanner:
+      tool: ast-grep
+      rule: silent-fallback-go
+    judgment: >-
+      Recognised as policy (never return an empty response) rather than
+      defensive coding, and recorded as a business rule or an open question.
+
+  - id: P7
+    title: comment says 3 impressions per day, the constant says 5
+    file: internal/domain/frequency.go
+    scanner:
+      tool: harvest_comments
+      expect_text: "每日最多曝光 3 次"
+    judgment: >-
+      open_questions entry recording the contradiction. Silently trusting
+      either side is the failure.
+
+  - id: P8
+    title: AdRequest is infrastructure vocabulary but a core domain entity
+    file: internal/api/handler.go
+    scanner:
+      tool: inventory
+      expect_min_layers: 3
+    judgment: >-
+      Survives as an entity despite the stopword downweight, and the override
+      is recorded in system.vocabulary_overrides.force_domain.
+
+  - id: P9
+    title: RedisKeyBuilder and HTTPMiddleware are decoys
+    file: internal/platform/redis_key.go
+    scanner:
+      tool: inventory
+      expect_max_layers: 1
+      expect_not_layer: domain
+    judgment: >-
+      Neither appears in entities. They have no identity, no lifecycle and no
+      meaning to anyone who has not read the code.
+
+  - id: P10
+    title: settlement drops a charge error instead of propagating it
+    file: internal/domain/settlement.go
+    scanner:
+      tool: ast-grep
+      rule: silent-fallback-go
+    judgment: >-
+      Raised as an open question about what happens to an unsettled order,
+      not written up as error handling and dismissed.
+
+  - id: P11
+    title: settlement status lifecycle, declared as an iota block and assigned
+    file: internal/domain/settlement.go
+    scanner:
+      tool: ast-grep
+      rule: state-transition-go
+    judgment: >-
+      The three statuses appear as an entity lifecycle in workflows, in
+      business language rather than as a list of Go constants.

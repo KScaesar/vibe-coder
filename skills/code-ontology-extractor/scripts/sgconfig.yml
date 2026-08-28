@@ -1,0 +1,7 @@
+# Wiring for `ast-grep test`. The rule files are the ones SKILL.md passes to
+# `ast-grep scan` in Pass C; the tests keep their boundaries honest, since a
+# detector that fires on every line costs the reader more than it saves.
+ruleDirs:
+  - rules
+testConfigs:
+  - testDir: rule-tests
