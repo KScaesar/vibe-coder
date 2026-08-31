@@ -30,7 +30,7 @@ description: "A comprehensive guide to generating or refactoring Golang tests us
   * 測試函數根據測試場景的意圖分為三類：
     * `_NormalCase`: 典型成功路徑 (Happy Path)，函式預期正常執行並返回預期結果。
     * `_EdgeCase`: 邊界條件測試 (空值、極值、臨界點)，根據業務邏輯可能成功也可能失敗。
-    * `_ErrorCase`: 錯誤輸入或異常情況，函式預期返回非 nil 的 error 或拋出 panic。
+    * `_FailCase`: 錯誤輸入或異常情況，函式預期返回非 nil 的 error 或拋出 panic。
 
 ## 測試規則
 
@@ -121,7 +121,7 @@ func TestAdd_Normal(t *testing.T) {
 
 * `Test[MethodOrFunction]_NormalCase`: 典型成功路徑，驗證核心功能在標準輸入下的正確性。
 * `Test[MethodOrFunction]_EdgeCase`: 邊界條件測試，驗證空值 (nil, "", [])、極值 (0, MaxInt)、臨界點等情況。根據業務邏輯，可能預期成功或失敗。
-* `Test[MethodOrFunction]_ErrorCase`: 錯誤情況測試，驗證函式在錯誤輸入或異常條件下能正確返回 error 或處理異常。
+* `Test[MethodOrFunction]_FailCase`: 錯誤情況測試，驗證函式在錯誤輸入或異常條件下能正確返回 error 或處理異常。
 * `Test[MethodOrFunction]_Integration`: (可選) 用於整合測試，並可搭配 build tags。
 
 ### 2. 子測試命名 (t.Run Name Format)
@@ -173,7 +173,7 @@ func TestAdd_Normal(t *testing.T) {
 * 驗證: 根據業務邏輯驗證結果，可能是成功 (nil error) 或符合預期的錯誤。
 * 範例: 給定空字串的名稱，根據業務邏輯可能允許或返回驗證錯誤。
 
-### ErrorCase (錯誤處理)
+### FailCase (錯誤處理)
 
 * 目的: 驗證函式在錯誤輸入或異常情況下能正確處理並返回預期的 error。
 * 場景:
@@ -260,7 +260,7 @@ t.Run("...", func(t *testing.T) {
 在規劃與生成測試時，請引導自己或使用者思考以下面向，以確保產出高價值的測試代碼：
 
 * TDD 先行視角: 我們是否已經清楚定義了輸入與預期行為，還是急著跳入實作？測試能否作為先行規格？
-* 情境外展 (Coverage): 除了典型成功路徑 (`_NormalCase`)，我們是否遺漏了空值、極值 (`_EdgeCase`) 或錯誤處理 (`_ErrorCase`) 的情境？
+* 情境外展 (Coverage): 除了典型成功路徑 (`_NormalCase`)，我們是否遺漏了空值、極值 (`_EdgeCase`) 或錯誤處理 (`_FailCase`) 的情境？
 * 可讀性與自我對話:
   * 看到 `t.Run` 的名稱，能直接說出這是一個什麼樣的業務場景嗎？ (Given-When-Then)
   * 當測試失敗時，斷言訊息 (Assertion messages) 能立刻告訴同事「發生了什麼事」嗎？
