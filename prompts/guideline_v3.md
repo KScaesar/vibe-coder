@@ -287,7 +287,22 @@ flowchart LR
   - `{feature}_dto` [file]: `Input`, `Output`, `Command`, `Query`。
   - `{feature}_biz` [file]: **Write Model** (Domain Logic, 狀態機、核心規則)。
   - `{feature}_view` [file]: **Read Model** (CQS)。有特別的讀取邏輯需要「運算」 (e.g., `func (v *UserView) MaskEmail() string`)。
-  - `{feature}_event` [file]: Domain Events。過去式命名，代表已發生的業務事實：`<Domain><ActionPast>Event` (e.g., `UserRegisteredEvent`)。通過 EventBus 告訴外界，讓系統的其他部分能對此做出反應
+  - `{feature}_event` [file]: Domain Events，透過 EventBus 通知外界系統已發生的業務事實。命名分兩類，主要以過去式命名：
+    1. Struct(Class)：型別名稱，承載該業務事實的相關資訊 (e.g., 發生時間、關聯 Id、狀態變更前後的值)。
+    2. Subject(Key-Value)：業務主題字串，描述領域行為，而非資料格式、儲存或傳輸方式，也就是與基礎設施無關。
+
+    ```go
+    // <> 為必要命名、[] 為可選命名
+
+    // 1. <Entity>[Dimension]<ActionPast>Event
+    type UserRegisteredEvent struct { /* ... */ }
+    type AudienceByTaGroupPublishedEvent struct { /* ... */ }
+
+    // 2. Subject<Entity>[Dimension]<ActionPast> = "<entity>.[dimension].<actionPast>"
+    // 以 . 分隔各段，利於 MQ 基礎設施以 wildcard/pattern matching 訂閱路由
+    const SubjectUserRegistered = "user.registered"
+    const SubjectAudienceByTaGroupPublished = "audience.byTaGroup.published"
+    ```
 - **Adapter Layer**
   - `{feature}_repo` [file]: 實作 `core/` 中定義的 Repository 介面，並定義 `Schema` 資料庫結構。簡單情境下，允許 ORM package 直接使用 Domain Model 作為資料結構，待業務複雜化後再抽取獨立的 `Schema`。
   - `{feature}_handler` [file]: `Request`, `Response` (純粹的 API 協定載體)。處理 HTTP/RPC 請求，轉換 `Request` -> `Input`。
