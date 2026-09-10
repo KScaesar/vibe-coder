@@ -43,7 +43,7 @@ root/
 ├── pkg/ (or src/)                 # [dir]  codebase
 │   ├── inject/                    # [dir]  依賴注入組裝 Composition Root
 │   │
-│   ├── core/                      # [dir]  商業價值 核心程式
+│   ├── core/                      # [dir]  商業價值 核心程式, 隨業務成長, 再依 Bounded Context 拆分
 │   │   ├── {feature}_svc            # [file] 業務流程的協調, UseCase Implementation, Repository Interface
 │   │   ├── {feature}_dto            # [file] 數據的契約
 │   │   ├── {feature}_biz            # [file] 業務規則的化身 DDD Write Model, Domain Function
