@@ -1,6 +1,7 @@
 ---
 name: youtube-download
 description: Production-ready workflow for downloading YouTube videos, extracting lossless clips, and generating AI transcripts. Use when you need to download videos, clip specific segments, archive channels, generate subtitles (SRT/VTT), or create text transcripts for RAG/indexing from YouTube URLs. Supports both CPU and GPU environments.
+disable-model-invocation: true
 ---
 
 # YouTube Download Skill
