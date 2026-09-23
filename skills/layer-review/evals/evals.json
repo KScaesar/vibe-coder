@@ -1,0 +1,65 @@
+{
+  "skill_name": "layer-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "幫我 review 一下 HEAD~2 到 HEAD 的改動，detail=true",
+      "expected_output": "依 layer 分組的 zh-TW 報告，存成 review_<HEAD 短 hash>.md，metadata 含 datetime 與 scope（8 碼 hash），附 File Change Summaries",
+      "files": [
+        "evals/files/setup_fixture.sh"
+      ],
+      "assertions": [
+        "報告檔名為 review_<new commit 前 8 碼>.md",
+        "報告開頭依序為 datetime（含時區）與 scope 兩行 metadata",
+        "scope 以 8 碼 hash 呈現 old 與 new commit",
+        "以 ## 標題依 Domain / Application / Infrastructure / User Interface layer 分組",
+        "指出 infra/order_repo.go 的 fmt.Sprintf 拼接 SQL 為 SQL injection",
+        "指出 FindByCustomer 逐筆查 order_items 的 N+1 問題",
+        "指出 VIP 折扣業務規則寫在 httpapi handler，應移回 domain 或 application",
+        "指出 domain 依賴 database/sql 或 log，違反依賴方向",
+        "指出 ListOrders 沒有授權檢查（IDOR）",
+        "指出 ListOrders 缺少輸入驗證（customer_id 空值或未限制 HTTP method）",
+        "指出直接序列化 domain Order 當作 API 回應（缺 response DTO）",
+        "指出內層 itemRows.Err() 沒有檢查",
+        "有 ## File Change Summaries 段落且列出變更檔案",
+        "檔案路徑以 ./path/to/file 格式呈現",
+        "報告以繁體中文撰寫"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "我剛改完還沒 commit，幫我看看這些改動在架構上有沒有問題",
+      "expected_output": "以 working tree 為範圍，檔名用時間戳，scope 寫明是未提交改動，不含 File Change Summaries",
+      "files": [
+        "evals/files/setup_fixture.sh --dirty"
+      ],
+      "assertions": [
+        "報告只針對未提交的 app/place_order.go 改動，不把已 commit 的歷史當成本次範圍",
+        "範圍外的既有問題（SQL injection、N+1、折扣規則在 handler 等）只出現在最後的 ## 範圍外的既有問題，沒有混進 layer 段落或另開 layer 標題",
+        "報告檔名為 review_<YYYYMMDD-HHMM>.md 格式",
+        "scope 寫明範圍是未提交的 working tree 改動",
+        "指出 Save 或 NewOrder 失敗時 transaction 沒有 rollback",
+        "指出 tx 開了但 Repo.Save 沒有使用該 tx，transaction 實際無效",
+        "指出 application 層直接依賴 database/sql / *sql.DB，違反依賴方向",
+        "指出 Begin 在 NewOrder 驗證之前，無謂延長連線持有時間",
+        "指出 Commit 失敗時仍回傳非 nil 的 order",
+        "沒有 ## File Change Summaries 段落",
+        "報告以繁體中文撰寫"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "review old=deadbeef new=cafebabe",
+      "expected_output": "commit 不存在時只輸出 metadata + ## Error，說明原因與需要使用者提供什麼，不產出空殼 layer 段落",
+      "files": [
+        "evals/files/setup_fixture.sh"
+      ],
+      "assertions": [
+        "報告有 ## Error 段落，說明 deadbeef / cafebabe 不存在",
+        "報告沒有任何 layer 段落（Domain / Application / Infrastructure / User Interface）",
+        "Error 段落說明使用者需要提供什麼（例如正確 hash 或可用的 commit）",
+        "沒有擅自改用其他 commit 範圍產出完整 review"
+      ]
+    }
+  ]
+}

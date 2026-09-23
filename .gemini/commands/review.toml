@@ -1,9 +1,0 @@
-description = "Review code for issues and suggest improvements."
-
-prompt = """
-```
-{{args}}
-
-!{cat ~/vibe-coder/prompts/code_review.md}
-```
-"""

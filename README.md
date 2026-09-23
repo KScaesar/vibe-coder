@@ -20,12 +20,6 @@ AI 協作開發起手式框架，與任意 LLM 模型（如 gemini, chatgpt, cla
 gemini --yolo -p "/commit detail=true"
 ```
 
-- create code review report
-
-```
-gemini --yolo -p "/review old={xx} new={yy} detail=true"
-```
-
 ## Manager Skills
 
 [vercel-labs/skills](https://github.com/vercel-labs/skills) 是一個用於管理 AI Agent Skills 的工具，支援 `claude-code`, `cursor`, `gemini` 等。
