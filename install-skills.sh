@@ -46,14 +46,47 @@ npx skills add mattpocock/skills --skill grill-me $AGENT_ARGS -y -g --copy
 npx skills add mattpocock/skills --skill grill-with-docs $AGENT_ARGS -y -g --copy
 npx skills add mattpocock/skills --skill domain-modeling $AGENT_ARGS -y -g --copy
 
-# npx skills add ./skills/youtube-download $AGENT_ARGS -y -g --copy
-npx skills add ./skills/mise $AGENT_ARGS -y -g --copy
-npx skills add ./skills/git-commit $AGENT_ARGS -y -g --copy
-npx skills add ./skills/git-worktree-design $AGENT_ARGS -y -g --copy
-npx skills add ./skills/testing-golang $AGENT_ARGS -y -g --copy
-npx skills add ./skills/spec-by-example $AGENT_ARGS -y -g --copy
-npx skills add ./skills/api-markdown $AGENT_ARGS -y -g --copy
-npx skills add ./skills/handoff $AGENT_ARGS -y -g --copy
+# -----------------------------------------------------------------------------
+# 本地 skills: 掃描 ./skills/ 底下所有目錄自動安裝，黑名單內的項目跳過。
+# 新增 skill 只要建目錄即可，不需再回來改這份清單。
+# -----------------------------------------------------------------------------
+SKILL_BLACKLIST=(
+  "youtube-download"
+  "atlas-schema"
+  "bun-uptrace"
+)
+
+is_blacklisted() {
+  local name="$1"
+  local item
+  for item in "${SKILL_BLACKLIST[@]}"; do
+    if [ "$item" = "$name" ]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+LOCAL_SKILLS_DIR="$(dirname "$0")/skills"
+echo "[*] Installing local skills from $LOCAL_SKILLS_DIR ..."
+for skill_path in "$LOCAL_SKILLS_DIR"/*/; do
+  [ -d "$skill_path" ] || continue
+  skill_path="${skill_path%/}"
+  skill_name=$(basename "$skill_path")
+
+  if [ ! -f "$skill_path/SKILL.md" ]; then
+    echo "    [!] Skip $skill_name (no SKILL.md)"
+    continue
+  fi
+
+  if is_blacklisted "$skill_name"; then
+    echo "    [-] Skip $skill_name (blacklisted)"
+    continue
+  fi
+
+  echo "    [+] Install $skill_name"
+  npx skills add "$skill_path" $AGENT_ARGS -y -g --copy
+done
 
 # -----------------------------------------------------------------------------
 # Function: sync_skills_to_agents
