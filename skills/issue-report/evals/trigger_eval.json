@@ -1,0 +1,23 @@
+[
+  {"query": "幫我寫個 issue：結帳頁面的送出按鈕點了沒反應", "should_trigger": true},
+  {"query": "這個 bug 回報一下，session API 一直回 504", "should_trigger": true},
+  {"query": "幫我開一張單給後端，daily_ad_impression 昨天的 partition 是空的", "should_trigger": true},
+  {"query": "Flink job 跑完筆數 0 但沒報錯，幫我開 ticket", "should_trigger": true},
+  {"query": "把這串 Slack 對話整理成正式的問題回報", "should_trigger": true},
+  {"query": "這段 stack trace 幫我整理成可以貼到 GitHub 的回報格式", "should_trigger": true},
+  {"query": "報表數字跟 SSP 對不上，我要寫給資料團隊，幫我寫清楚一點", "should_trigger": true},
+  {"query": "幫我寫 bug report", "should_trigger": true},
+  {"query": "這個問題我要交給前端接手，幫我整理一下現象跟重現方式", "should_trigger": true},
+  {"query": "CTV 播放器偶爾會卡在廣告 pod，幫我記錄成單子給 SSAI team", "should_trigger": true},
+
+  {"query": "這段 stack trace 什麼意思", "should_trigger": false},
+  {"query": "幫我寫這次故障的 postmortem", "should_trigger": false},
+  {"query": "這次 incident 的 RCA 報告幫我起個草稿", "should_trigger": false},
+  {"query": "幫我寫 PR description", "should_trigger": false},
+  {"query": "release note 幫我列一下這版改了什麼", "should_trigger": false},
+  {"query": "這個 504 可能是什麼原因造成的", "should_trigger": false},
+  {"query": "幫我 debug 這段 Go 的 goroutine leak", "should_trigger": false},
+  {"query": "我想加一個匯出 CSV 的功能，幫我寫需求規格", "should_trigger": false},
+  {"query": "幫我看看這個 BigQuery SQL 為什麼跑這麼慢", "should_trigger": false},
+  {"query": "幫我寫一封信通知客戶這週的系統維護", "should_trigger": false}
+]

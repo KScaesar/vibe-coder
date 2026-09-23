@@ -1,0 +1,57 @@
+{
+  "skill_name": "issue-report",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "這個 job 跑完筆數是 0 但沒報錯，幫我開單。時區是 UTC+8，前七天平均都有 1.2M 筆。",
+      "files": ["evals/files/flink-job-run-20260922-0300.log"],
+      "expected_output": "一個 .md 檔案，內容是結構完整的資料管線 issue，使用 Observations 而非捏造的重現步驟。",
+      "expectations": [
+        "讀取了 references/backend-data.md",
+        "產出 .md 檔案而非只在對話中貼出 Markdown",
+        "檔名符合 issue-<slug>.md 形式",
+        "使用 Observations section，沒有捏造 Steps to Reproduce",
+        "Environment 包含 run ID run-20260922-0300、來源 GCS 路徑、partition 2026-09-21 與時區",
+        "Severity 與 Priority 分開列出，各附一句理由",
+        "標題描述現象，不包含推測的成因",
+        "Summary 包含量化數值（0 筆 vs 1.2M）與完整的 table 識別名",
+        "回覆本身沒有把整張單的內容再貼一次"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "結帳按鈕點了沒反應，幫我寫個 issue",
+      "expected_output": "不產出檔案，改問 2-3 個關鍵問題。",
+      "expectations": [
+        "沒有產出任何檔案",
+        "沒有輸出填滿「待補」的 issue 骨架",
+        "提出 2 到 3 個問題，涵蓋環境或瀏覽器版本、發生頻率、時間或 console 訊息",
+        "沒有捏造瀏覽器版本、OS 版本或 build number"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "session API 這兩天常常 timeout，然後昨天的廣告報表數字也對不上，比 SSP 那邊少了 8%。幫我整理成單子給後端跟資料團隊。",
+      "expected_output": "兩個獨立的 .md 檔案，關聯以未驗證的方式標註。",
+      "expectations": [
+        "產出兩個獨立的 .md 檔案，而非併在同一個檔案",
+        "回覆中說明了拆成兩張單的依據",
+        "兩張單的標題與 Summary 主體只描述現象，沒有斷言因果關係",
+        "若提及兩者關聯，放在 Summary 最後獨立一行並標示尚未驗證",
+        "缺漏的欄位標成具體的「待補：...」而非捏造內容"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "CTV 播放器在 LG Channels 上偶爾會卡在廣告 pod 結束的地方，大概二十次會遇到一次，這兩週都有。幫我開單給 SSAI team。",
+      "expected_output": "一個 .md 檔案，保留 Steps to Reproduce 並註明重現機率。",
+      "expectations": [
+        "保留 Steps to Reproduce 而非改用 Observations，因為可重現但機率不是 100%",
+        "在步驟最後註明重現機率約 5%",
+        "Summary 的精度高於標題，包含時間區間與頻率",
+        "Summary 不是標題的換句話說",
+        "未知的環境欄位標成具體的「待補：...」"
+      ]
+    }
+  ]
+}
