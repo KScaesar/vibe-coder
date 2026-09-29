@@ -34,7 +34,7 @@ description: "A comprehensive guide to generating or refactoring Golang tests us
 
 ## 測試規則
 
-### 1. 優先使用 t.Run 獨立編寫測試場景
+### 1. 獨立測試 (Independent Test)：優先使用 t.Run 獨立編寫測試場景
 
 * 每個測試場景（Scenario）都應封裝在一個獨立的 t.Run 區塊中。
 * t.Run 的名稱應清晰描述該場景的完整行為。
@@ -62,10 +62,26 @@ func Test[MethodOrFunction]_Normal(t *testing.T) {
 }
 ```
 
-### 2. 適度使用測試表 (Test Table)
+### 2. 測試表 (Test Table)：判斷何時可以改用測試表
 
-* 原則：避免使用包含複雜 struct 和多重邏輯判斷的測試表。
-* 例外：當多個測試場景的 Given-When-Then 結構完全相同，僅有輸入和預期輸出不同時，可使用簡化的測試表結合 t.Run，以減少程式碼重複。
+測試表是用來變換「資料」的，不是用來變換「流程」的。在替上方的獨立測試 (Independent Test) 決定要不要改寫成測試表之前，先問一句：**這幾個案例是流程不同，還是資料不同？**
+
+* **流程不同**：Given 的準備方式、When 的呼叫方式、Then 的驗證方式，任一項做法不同 → 維持第 1 節的獨立測試寫法，不要硬塞進同一張表。
+  * 例：`Seed` 預置資料 vs. 注入寫入錯誤，屬於 Given 準備方式不同。
+* **資料不同**：Given、When、Then 的做法完全相同，只有輸入值與預期值不同 → 可以改用測試表，迴圈主體必須是一條直線，禁止任何 `if` 分支。
+  * 例：`Add(5, 3)` vs. `Add(10, -5)`，只有數值不同。
+
+灰色地帶：只有 Then 的驗證方式不同時（常見於成功/失敗案例混在一起），不要加 `wantErr` 這類旗標，改成拆成多張表（例如 `TestXxx_Valid` / `TestXxx_Invalid`），每張表的迴圈仍須是無分支的直線。
+
+該拆表（改回獨立測試）的訊號：
+
+* struct 出現控制旗標（`wantErr`、`skipSetup`、`mockFails`）或函式欄位（`setup func(...)`、`check func(...)`）。
+* 大部分欄位對大部分案例是零值。
+* 迴圈主體出現 `if tc.xxx` 分支。
+
+一句話檢查：只看這個測試本身，能不能在幾秒內說出它的輸入、動作、預期結果？能就是寫法恰當，不能就改寫。
+
+測試表範例（Given/When/Then 做法相同，僅資料不同）：
 
 ```go
 func TestAdd_Normal(t *testing.T) {  
