@@ -1,16 +1,32 @@
 ---
-name: comment-review
-description: 審查、撰寫或清理程式碼註解，判斷每則註解該保留、刪除、改寫成程式碼或搬到 ADR。適用於 code review、PR diff、AI 產出的程式碼、「補註解」「加 docstring / godoc」「這段註解要不要留」等請求——即使只是順口說「順便補一下註解」也應使用，因為預設行為容易產出逐行翻譯的註解與推測的理由。
+name: comment-writing
+description: Write and review comments in any file - source code, shell scripts, SQL, config files, docs. Decides whether a comment is needed, what it should say, and whether an existing one should be kept, deleted, rewritten, or moved to an ADR. Use whenever a task adds, edits, or evaluates comments - inline comments, docstrings/godoc/JSDoc, package docs, comment cleanup, code review, PR diffs - even for casual requests like "add some comments" or "should this comment stay?", since the default tends to produce line-by-line translations and guessed rationales.
 ---
 
-# Comment Review
+# Comment Writing
 
-程式碼表達計算過程；註解承載程式碼表達不了的脈絡：為什麼這樣做、適用情境、領域知識、陷阱。
+程式碼、腳本與設定表達做了什麼；註解承載它們表達不了的脈絡：為什麼這樣做、適用情境、領域知識、陷阱。
 
-註解不參與執行，寫錯也不會有任何檢查失敗，但人與 agent 都會把它當成理解程式的依據。審查要避免兩種失敗：
+適用範圍不限於程式語言：shell、SQL、設定檔、文件中的註解都一樣。語法與工具鏈差異（docstring 格式、linter）見「參考檔案」；沒有對應區段的語言，只用本文的規則。
 
-- 留下沒有新資訊或不可信的註解
+下文的「程式碼」泛指註解所描述的對象，包含 shell 指令、SQL、設定值；「測試」在沒有測試框架的檔案裡，可以換成 dry-run、`shellcheck`、設定 schema 驗證等能自動檢查的手段。
+
+註解不參與執行，寫錯也不會有任何檢查失敗，但人與 agent 都會把它當成理解程式的依據。
+撰寫與審查都要避免兩種失敗：
+
+- 寫下或留下沒有新資訊、不可信的註解
 - 刪掉或拒寫真正承載脈絡的註解
+
+## 使用模式
+
+| 模式 | 觸發情境 | 走的流程 | 輸出 |
+|---|---|---|---|
+| **撰寫** | 寫或修改程式、腳本、設定、文件時要加註解；使用者要求補註解、docstring、godoc | 「新增或修改的註解」四道閘門 | 只涉及註解的 diff，加上考慮過但沒寫的註解 |
+| **審查** | code review、PR diff、評估既有註解 | 新增或修改的註解走四道閘門；其餘走「既有註解」 | 審查報告 |
+
+- 撰寫模式預設結果是零則：先讓程式碼自己說清楚，閘門都通過才寫。
+- 自己剛寫完程式碼、準備加註解時，也屬於撰寫模式，不能因為「只是順手加一行」而跳過閘門。
+- 兩種模式共用同一套判斷標準，差別只在撰寫時缺來源就不寫，審查時缺來源則要求補上或建議刪除。
 
 判斷標準永遠是可信、可維護、可讀，不是「多貼近官方或慣例語法」。作者或團隊已經有慣用的風格（例如用 `@param:` 這類自訂標籤取代官方 heading 語法）時，只要人與工具都讀得懂，就不是缺陷，不用為了貼近慣例而重寫；只有風格選擇真的造成工具解析失敗、連結或渲染失效等可驗證的功能性問題時，才需要修正，而且只修正造成問題的那個部分，不連帶把使用者的風格選擇一起改掉。
 
@@ -240,4 +256,4 @@ return store.MarkSent(ctx, event.ID)
 
 ## 參考檔案
 
-- 審查特定語言時，讀 `references/doc-comments-by-language.md` 中對應語言的區段（目前有 Go、Python）。
+- 撰寫或審查特定語言的文件註解時，讀 `references/doc-comments-by-language.md` 中對應語言的區段（目前有 Go、Python）。

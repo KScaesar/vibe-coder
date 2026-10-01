@@ -44,6 +44,11 @@ UNIVERSAL_RULE_TARGET=~/.agents/AGENTS.md
 # 不會真的落地到各自的專屬目錄，所以需要 sync_skills_to_agents() 額外補一次複製。
 UNIVERSAL_SKILLS_DIR=~/.agents/skills
 
+# 已改名或下架的舊 skill: 安裝前會從所有 agent 目錄移除，避免舊版殘留
+LEGACY_SKILLS=(
+  "comment-review" # 已改名為 comment-writing
+)
+
 # 本地 skills 黑名單: 掃描 ./skills/ 時跳過這些項目
 SKILL_BLACKLIST=(
   "youtube-download"
@@ -66,6 +71,23 @@ create_agent_skill_dirs() {
     eval mkdir -p "${PATHS[$i]}"
   done
   echo "[*] Directories are ready."
+}
+
+# -----------------------------------------------------------------------------
+# Function: remove_legacy_skills
+# 意圖: 從通用目錄與各 agent 專屬目錄移除 LEGACY_SKILLS 內的舊 skill。
+# -----------------------------------------------------------------------------
+remove_legacy_skills() {
+  echo "[*] Removing legacy skills..."
+  local name dir_path i
+  for name in "${LEGACY_SKILLS[@]}"; do
+    rm -rf "${UNIVERSAL_SKILLS_DIR:?}/${name:?}"
+    for i in "${!AGENTS[@]}"; do
+      dir_path=$(eval echo "${PATHS[$i]}")
+      rm -rf "${dir_path:?}/${name:?}"
+    done
+    echo "    [-] Removed $name"
+  done
 }
 
 # -----------------------------------------------------------------------------
@@ -229,10 +251,11 @@ sync_global_rules() {
 
 # -----------------------------------------------------------------------------
 # Function: main
-# 意圖: 主要流程 - 建立目錄 -> 依使用者選擇安裝 skills -> 同步 Global 規則。
+# 意圖: 主要流程 - 建立目錄 -> 移除舊 skill -> 依使用者選擇安裝 skills -> 同步 Global 規則。
 # -----------------------------------------------------------------------------
 main() {
   create_agent_skill_dirs
+  remove_legacy_skills
   prompt_install_scope
   sync_skills_to_agents
   sync_global_rules
