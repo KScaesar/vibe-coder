@@ -145,6 +145,8 @@ install_remote_skills() {
   npx skills add mattpocock/skills --skill grill-me $AGENT_ARGS -y -g --copy
   npx skills add mattpocock/skills --skill grill-with-docs $AGENT_ARGS -y -g --copy
   npx skills add mattpocock/skills --skill domain-modeling $AGENT_ARGS -y -g --copy
+
+  npx skills add chenjackle45/html-visualizer $AGENT_ARGS -y -g --copy
 }
 
 # -----------------------------------------------------------------------------
