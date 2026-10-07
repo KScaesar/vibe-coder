@@ -16,6 +16,11 @@
 - The environment is managed by `mise`. Follow the execution patterns defined in the `mise` skill before running commands.
 - **Avoid Compound Commands**: Avoid chaining commands with `&&`, `;`. Prefer splitting them into standalone individual commands to match auto-approval whitelists.
 
+### Production Operations
+
+- Before any command that targets production (the command, host, path, or config name contains `prod`) or writes/deletes data, first output the list of commands to run and their expected impact, then wait for explicit confirmation.
+- Run production commands one host at a time; do not chain them or loop over hosts without confirmation.
+
 ## Sources of Truth & Code Intelligence
 
 ### External Truth (Docs & APIs)
