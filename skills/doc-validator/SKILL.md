@@ -144,7 +144,7 @@ intent-doc 是中央路由器，載體為文件首頁 `index.md` 或倉庫根目
 
 1. **Identify & Granularity**：判定每份文件的類型與粒度。無法歸類或橫跨兩類者標記為混雜並建議拆分；多份同類型文件內容過少、零散且業務邏輯緊密相依，標記過度碎片化並建議合併；合併後過長或多主題者標記過度合併。
 2. **Validate boundaries**：對照 Document Types 的 Must / Must Not 檢查內容污染。
-3. **Validate content elements**：檢查內容是否涵蓋該類型的關鍵要素。不要求固定的章節結構、標題或順序；只有缺漏會讓讀者無法完成該類型的任務時，才算缺漏。
+3. **Validate content elements**：檢查內容是否涵蓋該類型的關鍵要素。不要求固定的章節結構、標題或順序；只有缺漏會讓讀者無法完成該類型的任務時，才算缺漏。文件 front matter 有宣告 metadata（性質、要求等級、權威、約束力）時，另依 [references/doc-metadata.md](references/doc-metadata.md) 檢查宣告與內容是否一致；未宣告則略過，不扣分。
 4. **Mechanical checks**：能用工具的用工具，不靠肉眼目測；項目與輸出格式見 [references/mechanical-checks.md](references/mechanical-checks.md)。無法機械化的項目（如重複事實）由審查者判斷，並標明是判斷而非工具結果。
 5. **Source fidelity（僅 Migration）**：逐段對照來源與新文件，不要求逐字，但每段內容都要能找到去處；只在來源出現一次的規則最容易遺失，要特別對照。同時檢查新文件有沒有來源沒有的推論、目的句或規則，不因「看起來合理」放行。分類標準、「找得到」的判斷、反向可追溯與逐區塊比較見 [references/migration-acceptance.md](references/migration-acceptance.md)。
 6. **Reader walkthrough**：找沒參與撰寫、也沒看過來源（Migration）的讀者，只靠被審查的文件完成 5–7 個代表性任務，涵蓋專案實際提供的閱讀路徑。審查者讀過來源，不可充當讀者；讀者由使用者提供，或由審查者派出全新 context 的 subagent。此步通常找到最多問題，不可用靜態檢查取代。任務設計、隔離、計數與回報格式見 [references/reader-walkthrough.md](references/reader-walkthrough.md)；取不到讀者時的判定見 [references/scoring-calibration.md](references/scoring-calibration.md)。
@@ -180,6 +180,7 @@ intent-doc 是中央路由器，載體為文件首頁 `index.md` 或倉庫根目
 - [ ] 讀者走查：代表任務皆能完成；做不到時已列為驗證缺口
 - [ ] Migration：省略清單無「其他」類項目（硬規則）；新增內容皆可追溯或已登記授權；無未解決的「更差」區塊（硬規則）
 - [ ] 類型名實相符：檔案自述性質與所在類型一致，不符者已改名、移動或標示
+- [ ] 僅在文件有宣告 metadata 時適用：宣告與內容一致（見 [references/doc-metadata.md](references/doc-metadata.md)）
 - [ ] 外部引用（程式註解、README、CI 解析）的路徑與格式仍有效；文件內的可執行內容已在隔離環境驗證
 - [ ] intent-doc 符合「必備」兩項；README 保持精簡
 - [ ] 目錄與檔名風格一致（`README.md`、ADR 編號等通行慣例除外）
@@ -229,7 +230,7 @@ intent-doc 是中央路由器，載體為文件首頁 `index.md` 或倉庫根目
 ## 驗證缺口（未能執行的驗證與對判定的影響；無則省略）
 ## 來源保真與逐區塊比較（僅 Migration：省略清單、反向可追溯、合併結果表）
 ## Cross-link 缺漏
-## Checklist 結果
+## Checklist 結果（含一行 Metadata 檢查：已啟用 / 未宣告略過）
 ## 信心指數（0-100% ± 範圍，門檻預設 90%）
 - 分數與判定（合格 / 不合格 / 未能判定）；Migration 分軸列出
 - 理由（2-4 句，扣分附證據）
