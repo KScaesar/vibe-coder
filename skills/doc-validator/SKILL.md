@@ -130,9 +130,21 @@ intent-doc 是中央路由器，載體為文件首頁 `index.md` 或倉庫根目
 
 #### decisions
 - **Purpose**：決策歷史日誌，以 ADR 格式撰寫；追加式、不可變、帶時間戳。
-- **Must**：記錄當時背景、評估過的替代方案與後果；舊 ADR 不改原文，只標記 Outdated 並註明由哪個 ADR 取代（如 `Outdated: replaced by ADR-0012`）；每份 ADR 自足，不讀其他文件也看得懂決策的來龍去脈（為自足而保留與 reference 重複的 Context 是可接受的例外）。
-- **Must Not**：描述系統現況（那是 explanation）。
-- **關鍵要素**：狀態、背景、決策、結果評估（正負面影響）。
+- **Must**：
+  - 記錄當時背景與後果。
+  - 包含四項內容（標題與章節結構不限，不以標題扣分）：
+    1. 考量過的可選方案
+    2. 每個方案的優缺點（含最終選中的，不只被否決者）
+    3. 最後選了什麼
+    4. 為什麼選它（取捨理由）
+  - 舊 ADR 不改原文，只標記 Outdated 並註明由哪個 ADR 取代（如 `Outdated: replaced by ADR-0012`）。
+  - 每份 ADR 自足，不讀其他文件也看得懂來龍去脈（為自足而保留與 reference 重複的 Context 是可接受的例外）。
+- **Must Not**：
+  - 描述系統現況（那是 explanation）。
+  - 混入現存事實、規則本體、機制流程（屬 reference 或 explanation）。
+  - 連結到 reference／testcases 當依據或 Related。依賴方向是「reference／testcases → ADR」，標註「源自 ADR-xxx」。
+- **關鍵要素**：狀態、背景、決策、結果評估（正負面影響）。審查看四項內容是否存在，不看章節是否齊全。
+- 概念分類與審查依據見 [references/adr-rules.md](references/adr-rules.md)。
 - 從舊文件拆出 ADR 時的狀態與改寫規則，見 [references/migration-acceptance.md](references/migration-acceptance.md) 第 5 節。
 
 #### testcases
@@ -175,6 +187,8 @@ intent-doc 是中央路由器，載體為文件首頁 `index.md` 或倉庫根目
 | explanation 含操作步驟 | tutorials 或 guides |
 | explanation 含過期歷史 | decisions |
 | ADR 描述現況 | 改寫進 explanation，ADR 保持歷史原貌 |
+| ADR 含現存事實、規則本體、機制流程 | reference（事實與規則）或 explanation（運作方式），ADR 只留選擇當下的取捨 |
+| ADR 連到 reference／testcases | 刪除連結，改由 reference／testcases 標註「源自 ADR-xxx」 |
 | 同一事實完整出現在多處 | 保留在權威來源（SSOT），其餘改連結 |
 
 ## Validation Checklist
@@ -188,6 +202,11 @@ intent-doc 是中央路由器，載體為文件首頁 `index.md` 或倉庫根目
 - [ ] 機械檢查通過：無死連結、壞錨點、自我連結、舊檔名殘留；新文件皆有入站連結且從導覽找得到；橫切主題有索引入口
 - [ ] 讀者走查：代表任務皆能完成；做不到時已列為驗證缺口
 - [ ] Migration：省略清單無「其他」類項目（硬規則）；新增內容皆可追溯或已登記授權；無未解決的「更差」區塊（硬規則）
+- [ ] ADR 符合 [references/adr-rules.md](references/adr-rules.md)：
+  - 四項內容齊備（方案、優缺點、選擇、理由，標題不論）
+  - 無現存事實、規則本體、機制流程
+  - 無指向 reference／testcases 的依賴
+  - 方案來源可確認
 - [ ] 類型名實相符：檔案自述性質與所在類型一致，不符者已改名、移動或標示
 - [ ] 僅在文件有宣告 metadata 時適用：宣告與內容一致（見 [references/doc-metadata.md](references/doc-metadata.md)）
 - [ ] 外部引用（程式註解、README、CI 解析）的路徑與格式仍有效；文件內的可執行內容已在隔離環境驗證
