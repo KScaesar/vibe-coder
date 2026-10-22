@@ -93,7 +93,7 @@ else
       {
         "question": "Detected version change for $TOOL (Active: ${ACTIVE_VERSION:-None} -> Target: ${TARGET_VERSION:-(Unspecified)}). How would you like to proceed?",
         "options": [
-          "Scenario 1 - In-place upgrade ('mise upgrade $TOOL --bump'): Upgrade version in the existing configuration file",
+          "Scenario 1 - In-place pinned upgrade ('mise use --path ${SOURCE_CONFIG:-<config>} $TOOL@$TARGET_VERSION'): Pin the exact target version in the config file where the tool is already defined",
           "Scenario 2 - Multi-version coexistence & global switch ('mise use -g $TOOL@$TARGET_VERSION'): Install new version and set as global default, preserving old version",
           "Scenario 3 - Project-local switch ('mise use $TOOL@$TARGET_VERSION'): Set version in current project's mise.toml"
         ],

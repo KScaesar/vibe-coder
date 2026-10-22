@@ -38,7 +38,7 @@ bash scripts/check_tool.sh <tool> [target_version]
   - **🛑 STRICT PROHIBITION**: NEVER execute `mise use` or `mise upgrade` directly in the same turn.
   - **MANDATORY TOOL GATE**: The Agent **MUST IMMEDIATELY invoke the `ask_question` tool** using the questions and options provided in `ask_question_payload` from the script's JSON output.
   - **Human-In-The-Loop Execution**: Only execute the command after the user selects an option via `ask_question`:
-    1. **Scenario 1 (Upgrade Existing Version)**: `mise upgrade <tool> --bump`
+    1. **Scenario 1 (Upgrade Existing Version)**: `mise use --path <source_config> <tool>@<target_version>` (pins the exact target in the config that already defines the tool)
     2. **Scenario 2 (Coexistence & Global Switch)**: `mise use -g <tool>@<target_version>`
     3. **Scenario 3 (Project-local Switch)**: `mise use <tool>@<target_version>`
 
@@ -117,14 +117,14 @@ Based on [Getting Started](references/getting_started.md).
   - **Global Explicit (`-g`)**: `mise use -g go@$(mise latest go)` (writes to global configuration).
   - **Backend Packages**: `mise use -g npm:agent-browser@$(mise latest npm:agent-browser)`.
   - **Pin Exact**: `mise use --pin node@22.14.0`.
-- **Upgrade (`mise upgrade`)**: Automatically upgrade tools to newer versions and bump configuration in-place.
+- **Upgrade (`mise upgrade`)**: Upgrades within the range already in config. NEVER pass `--bump`: it jumps to the newest release (e.g. node 24 → 26) and ignores the target version the user asked for. To move to a specific version, use `mise use` with an explicit `<tool>@<version>`.
 - **Run (`mise run`)**: Execute tasks defined in `mise.toml`.
 - **Activate**: Integrate mise with your shell.
 
 ### Common Commands
 
 - `mise ls`: List installed tools and active versions.
-- `mise upgrade`: Automatically upgrade outdated tools (`mise upgrade <tool> --bump`).
+- `mise upgrade`: Upgrade within the configured range only (never `--bump`).
 - `mise use`: Set active tool version in project or global config (`mise use <tool>@<version>`).
 - `mise doctor`: Diagnose environment and configuration issues.
 
