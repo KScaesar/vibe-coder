@@ -54,6 +54,10 @@ SKILL_BLACKLIST=(
   "youtube-download"
   "atlas-schema"
   "bun-uptrace"
+  "chart"
+  "git-worktree-design"
+  "metric-formula-designer"
+  "code-ontology-extractor"
 )
 
 # =============================================================================
@@ -135,7 +139,7 @@ install_remote_skills() {
   npx skills add upstash/context7 --skill context7-cli $AGENT_ARGS -y -g --copy
   mise use -g npm:ctx7
   # npx skills add Ben8t/math-spec-driven-skill $AGENT_ARGS -y -g --copy
-  npx skills add multica-ai/andrej-karpathy-skills $AGENT_ARGS -y -g --copy
+  # npx skills add multica-ai/andrej-karpathy-skills $AGENT_ARGS -y -g --copy
 
   # npx skills add obra/superpowers --skill using-git-worktrees $AGENT_ARGS -y -g --copy
   # npx skills add obra/superpowers --skill receiving-code-review $AGENT_ARGS -y -g --copy
@@ -144,7 +148,7 @@ install_remote_skills() {
 
   npx skills add mattpocock/skills --skill grill-me $AGENT_ARGS -y -g --copy
   npx skills add mattpocock/skills --skill grill-with-docs $AGENT_ARGS -y -g --copy
-  npx skills add mattpocock/skills --skill domain-modeling $AGENT_ARGS -y -g --copy
+  # npx skills add mattpocock/skills --skill domain-modeling $AGENT_ARGS -y -g --copy
 
   npx skills add chenjackle45/html-visualizer $AGENT_ARGS -y -g --copy
 }
