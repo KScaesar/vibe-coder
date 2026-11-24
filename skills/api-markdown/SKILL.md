@@ -27,7 +27,7 @@ description: >
 
 ## Header 層級樹
 
-```
+````
 # API
 ├── ## CHANGELOG
 └── ## SERVICE: <ServiceName>
@@ -46,7 +46,7 @@ description: >
                     ```json
                     { ... }
                     ```
-```
+````
 
 ---
 
@@ -115,12 +115,14 @@ description: 建立使用者
 ```
 
 ❌ 錯誤範例（絕對不可這樣寫）：
+
 ```markdown
 ### PATH: PATCH GET /users/{id}
 ### PATH: POST PATCH /orders
 ```
 
 ✅ 正確做法（每個 method 獨立一個 PATH 區塊）：
+
 ```markdown
 ### PATH: GET /users/{id}
 description: 取得使用者資料
@@ -193,7 +195,7 @@ format: application/json
 可直接執行的 curl 範例，使用 stg 環境 URL。
 從 SERVERS、HEADERS、BODY 的資訊組出來，方便快速測試。
 
-```markdown
+````markdown
 ##### CURL
 ```bash
 curl -X POST https://api.stg-example.com/users \
@@ -201,7 +203,7 @@ curl -X POST https://api.stg-example.com/users \
   -H "Content-Type: application/json" \
   -d '{ "name": "John Doe", "email": "john@example.com" }'
 ```
-```
+````
 
 ---
 
@@ -218,7 +220,7 @@ Status code 接在關鍵字後，同一行。
 JSON response 接在 description 後的 code block。
 無 response body 時，code block 寫 `{}`。
 
-```markdown
+````markdown
 ##### STATUS: 201
 description: 建立成功
 ```json
@@ -230,7 +232,7 @@ description: 請求錯誤
 ```json
 { "error": "Invalid input" }
 ```
-```
+````
 
 ---
 
